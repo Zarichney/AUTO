@@ -1,6 +1,7 @@
 # /main.py 
 
 import json
+import sys
 from openai import OpenAI
 from Agents import UserProxyAgent, CodingAgent 
 from Tools.ReadFile import ReadFile
@@ -67,9 +68,14 @@ def request_assistance(recipient,message):
     return result
 
 # Program execution
+user_message = sys.argv[1] if len(sys.argv) > 1 else None
+
 while True:
-    user_message = input("User: ")
+    if user_message is None:
+        user_message = input("User: ")
 
     message = GetCompletion(client, user_message, user_agent, [request_assistance], thread)
 
     Log(colors.GREEN, f"{user_agent.name}: {message}")
+    
+    user_message = None

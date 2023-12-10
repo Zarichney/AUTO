@@ -7,4 +7,5 @@
 
 # Get Started 
 
-1. `python main.py`
+- `python main.py` and AUTO will wait for your prompt, or
+- `python main.py "my prompt"` to get AUTO to respond to your command or query
