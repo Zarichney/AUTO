@@ -1,0 +1,12 @@
+{
+    "assistants": [
+        {
+            "id": "asst_8dSLcUy1qgR5utR2fSKOykBw",
+            "key": "coder"
+        },
+        {
+            "id": "asst_jnrfB38RIgZHyH9dIpC3tgen",
+            "key": "user"
+        }
+    ]
+}
