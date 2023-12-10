@@ -1,40 +1,9 @@
+# /Utilities/OpenAiHelper.py
+
 import time
-import textwrap
-from openai import OpenAI, Client
+from Utilities.Log import Log, colors
 
-class bcolors:
-    HEADER = "\033[95m"
-    BLUE = "\033[94m"
-    CYAN = "\033[96m"
-    GREEN = "\033[92m"
-    YELLOW = "\033[93m"
-    RED = "\033[91m"
-    ENDC = "\033[0m"
-    BOLD = "\033[1m"
-    UNDERLINE = "\033[4m"
-
-def wprint(color, *args, width=150, **kwargs):
-    """
-    Custom print function that wraps text to a specified width.
-
-    Args:
-    *args: Variable length argument list.
-    width (int): The maximum width of wrapped lines.
-    **kwargs: Arbitrary keyword arguments.
-    """
-    wrapper = textwrap.TextWrapper(width=width)
-
-    # Process all arguments to make sure they are strings and wrap them
-    wrapped_args = [wrapper.fill(str(arg)) for arg in args]
-
-    # Print the wrapped text in the specified color
-    print(color + ' '.join(wrapped_args) + bcolors.ENDC, **kwargs)
-    
-
-
-
-
-def get_completion(client, message, agent, funcs, thread):
+def GetCompletion(client, message, agent, funcs, thread):
     """
     Executes a thread based on a provided message and retrieves the completion result.
 
@@ -73,7 +42,7 @@ def get_completion(client, message, agent, funcs, thread):
             tool_calls = run.required_action.submit_tool_outputs.tool_calls
             tool_outputs = []
             for tool_call in tool_calls:
-                wprint(bcolors.YELLOW, f"{agent.name} is calling function {tool_call.function.name}")
+                Log(colors.YELLOW, f"{agent.name} is calling function {tool_call.function.name}")
                 # find the tool to be executed
                 func = next(
                     iter(
@@ -96,7 +65,7 @@ def get_completion(client, message, agent, funcs, thread):
                 except Exception as e:
                     output = "Error: " + str(e)
 
-                wprint(bcolors.YELLOW, f"Tool '{tool_call.function.name}' Output: ", output)
+                Log(colors.YELLOW, f"Tool '{tool_call.function.name}' Output: ", output)
                 tool_outputs.append({"tool_call_id": tool_call.id, "output": output})
 
             # submit tool outputs

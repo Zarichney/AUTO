@@ -1,13 +1,22 @@
+# /main.py 
+
 from openai import OpenAI
-from agents import RecipeAgent, UserProxyAgent, CodingAgent 
-from tools import ExecutePyFile, ReviewDirectory, CreateFile, SendMessage
-from utils import wprint, bcolors, get_completion
+from instructor import OpenAISchema
+from Agents import RecipeAgent, UserProxyAgent, CodingAgent 
+from Tools.ReadFile import ReadFile
+from Tools.RequestAssistance import RequestAssistance
+from Tools.CreateFile import CreateFile
+from Tools.MoveFile import MoveFile
+from Tools.ExecutePyFile import ExecutePyFile
+from Utilities.Connection import GetKey
+from Utilities.OpenAiHelper import GetCompletion
+from Utilities.Log import Log, colors
 
 # Config stuff
 gpt3 = "gpt-3.5-turbo"
 gpt4 = "gpt-4-1106-preview"
 current_model = gpt4
-openai_key = ""
+openai_key = GetKey()
 
 client = OpenAI(
     api_key=openai_key,
@@ -32,7 +41,8 @@ code_assistant = client.beta.assistants.create(
     instructions=CodingAgent.instructions,
     model=current_model,
     tools=[
-        {"type": "function", "function": ReviewDirectory.openai_schema},
+        {"type": "function", "function": ReadFile.openai_schema},
+        {"type": "function", "function": MoveFile.openai_schema},
         {"type": "function", "function": CreateFile.openai_schema},
         {"type": "function", "function": ExecutePyFile.openai_schema},
     ],
@@ -40,17 +50,17 @@ code_assistant = client.beta.assistants.create(
 
 # User agent setup
 user_proxy = client.beta.assistants.create(
-    name=RecipeAgent.name + " / " + UserProxyAgent.name,
-    instructions=RecipeAgent.instructions + " / " + UserProxyAgent.instructions,
+    name=UserProxyAgent.name,
+    instructions=UserProxyAgent.instructions,
     model=current_model,
     tools=[
         {
             "type": "function",
             "function":
-            # `SendMessage` is a tool used by the User Proxy Agent to send messages to other agents in the group chat. 
+            # `RequestAssistance` is a tool used by the User Proxy Agent to send messages to other agents in the group chat. 
             # It helps facilitate communication between the user and specialized agents by accurately articulating 
             # user requests and maintaining ongoing communication with the relevant agents.
-            SendMessage.openai_schema,
+            RequestAssistance.openai_schema,
         },
     ],
 )
@@ -62,20 +72,20 @@ agents_and_threads = {
     "code_assistant": {
         "agent": code_assistant,
         "thread": None,
-        "funcs": [ReviewDirectory, CreateFile, ExecutePyFile]
+        "funcs": [ReadFile, MoveFile, CreateFile, ExecutePyFile]
     }
 }
 
-# Internal function to call the `SendMessage` tool. 
+# Internal function to call the `RequestAssistance` tool. 
 # Supplies the necessary internal components to operate (the agents, threads and client)
-def send_message(recipient,message):
-    result = SendMessage(recipient=recipient,message=message).run(agents_and_threads, client)
+def request_assistance(recipient,message):
+    result = RequestAssistance(recipient=recipient,message=message).run(agents_and_threads, client)
     return result
 
 # Program execution
 while True:
     user_message = input("User: ")
 
-    message = get_completion(client, user_message, user_proxy, [send_message], thread)
+    message = GetCompletion(client, user_message, user_proxy, [request_assistance], thread)
 
-    wprint(bcolors.GREEN, f"{user_proxy.name}: {message}")
+    Log(colors.GREEN, f"{user_proxy.name}: {message}")
