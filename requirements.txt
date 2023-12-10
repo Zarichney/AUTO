@@ -1,0 +1,4 @@
+typing
+pydantic
+openai
+instructor
