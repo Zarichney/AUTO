@@ -1,9 +1,10 @@
 # /Utilities/OpenAiHelper.py
 
 import time
+from Agents.Agent import Agent
 from Utilities.Log import Log, colors
 
-def GetCompletion(client, message, agent, funcs, thread):
+def GetCompletion(client, message, agent: Agent):
     """
     Executes a thread based on a provided message and retrieves the completion result.
 
@@ -19,6 +20,8 @@ def GetCompletion(client, message, agent, funcs, thread):
     Returns:
     - str: The completion output as a string, obtained from the agent following the execution of input message and functions.
     """
+    
+    thread = agent.thread
 
     # create new message in the thread
     message = client.beta.threads.messages.create(
@@ -48,7 +51,7 @@ def GetCompletion(client, message, agent, funcs, thread):
                     iter(
                         [
                             func
-                            for func in funcs
+                            for func in agent.tools
                             if func.__name__.replace("_", "").lower() == tool_call.function.name.lower()
                         ]
                     )
@@ -62,10 +65,13 @@ def GetCompletion(client, message, agent, funcs, thread):
                         output = tool
                     else:
                         output = tool.run()
+                        
+                    Log(colors.YELLOW, f"Tool '{tool_call.function.name}' Output: ", output)
+                    
                 except Exception as e:
                     output = "Error: " + str(e)
+                    Log(colors.RED, output)
 
-                Log(colors.YELLOW, f"Tool '{tool_call.function.name}' Output: ", output)
                 tool_outputs.append({"tool_call_id": tool_call.id, "output": output})
 
             # submit tool outputs

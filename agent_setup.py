@@ -21,6 +21,9 @@ coder_agent = client.beta.assistants.create(
     name=CodingAgent.name,
     instructions=CodingAgent.instructions,
     model=current_model,
+    metadata={
+        "key": "coder"
+    },
     tools=[
         {"type": "function", "function": ReadFile.openai_schema},
         {"type": "function", "function": MoveFile.openai_schema},
@@ -34,6 +37,9 @@ user_agent = client.beta.assistants.create(
     name=UserProxyAgent.name,
     instructions=UserProxyAgent.instructions,
     model=current_model,
+    metadata={
+        "key": "user"
+    },
     tools=[
         {"type": "function", "function": RequestAssistance.openai_schema},
     ],

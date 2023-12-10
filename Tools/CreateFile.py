@@ -1,5 +1,6 @@
 # /Tools/CreateFile.py
 
+import os
 from instructor import OpenAISchema
 from pydantic import Field
 
@@ -21,6 +22,12 @@ class CreateFile(OpenAISchema):
     body: str = Field(..., description="Correct contents of a file")
 
     def run(self):
+        
+        # Create directory if it doesnt exist already
+        if not os.path.exists(self.working_dir):
+            os.makedirs(self.working_dir)
+        
+        # Write file
         with open(self.working_dir + self.file_name, "w") as f:
             f.write(self.body)
 

@@ -1,3 +1,4 @@
 openai.key
 env/
 __pycache__/
+session.json

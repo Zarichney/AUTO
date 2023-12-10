@@ -34,12 +34,13 @@ def GetSession(client: OpenAI):
 
     with open("./session.json", "r") as session_file:
         session = json.load(session_file)
-        for agent in session["agents"]:
-            agency[agent["key"]] = Agent(agent["key"], agent["id"], client.beta.assistants.retrieve(agent["id"]))
+        for agentConfig in session["agents"]:
+            agency[agentConfig["key"]] = Agent(agentConfig["key"], agentConfig["id"], client.beta.assistants.retrieve(agentConfig["id"]))
 
     # Update API with latest from project
     for agent_key in agency:
-        agent = agency[agent_key].agent
+        agent = agency[agent_key]
+        agent.name = agent.agent.name
         agent_tools = []
 
         if agent_key == "coder":
@@ -51,12 +52,14 @@ def GetSession(client: OpenAI):
                     {"type": "function", "function": ExecutePyFile.openai_schema},
                 ],
             )
+            agent.tools = [ReadFile, MoveFile, CreateFile, ExecutePyFile]   
         elif agent_key == "user":
             agent_tools = (
                 [
                     {"type": "function", "function": RequestAssistance.openai_schema},
                 ],
             )
+            agent.tools = [RequestAssistance]   
 
         # Commented out temporarily: there seems to be an server side API issue
         # Received a 400 BadRequest because the tools type "function" is not being accepted...
@@ -66,6 +69,9 @@ def GetSession(client: OpenAI):
         #     description=agent.description if agent.description is not None else "",
         #     instructions=agent.instructions if agent.instructions is not None else "",
         #     model=current_model,
+        #     metadata={
+        #        "key": agent_key
+        #     },
         #     tools=agent_tools,
         # )
 

@@ -7,3 +7,5 @@ class Agent:
         self.key = key
         self.id = id
         self.agent = agent
+        self.thread = None
+        self.tools = []

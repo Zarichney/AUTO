@@ -1,34 +1,41 @@
 # /Tools/RequestAssistance.py
 
-from typing import Literal
+from typing import Dict
 from instructor import OpenAISchema
 from pydantic import Field
+from Agents.Agent import Agent
 from Utilities.OpenAiHelper import GetCompletion
 from Utilities.Log import Log, colors
 
 class RequestAssistance(OpenAISchema):
     """Send messages to other specialized agents in this group chat."""
 
-    recipient: str = Field(
+    recipient_name: str = Field(
         ...,
-        description="The name of the agent which is being requested for assistance",
+        description="The agent's name which is being requested for assistance",
     )
     message: str = Field(
         ...,
         description="Specify the task required for the recipient agent to complete. Focus instead on clarifying what the task entails, rather than providing detailed instructions.",
     )
 
-    def run(self, agents_and_threads, client):
-        recipient = agents_and_threads[self.recipient]
+    def run(self, agency: Dict[str, Agent], client):
+        # find agent by name in agency
+        recipient = next((agent for agent in agency.values() if agent.name == self.recipient_name), None)
+        
+        if not recipient:
+            Log(colors.RED, f"Agent {self.recipient_name} not found in agency.")
+            return
+        
         # if there is no thread between user proxy and this agent, create one
-        if not recipient["thread"]:
-            recipient["thread"] = client.beta.threads.create()
+        if not recipient.thread:
+            recipient.thread = client.beta.threads.create()
             
-        Log(colors.CYAN, f"Prompting {recipient['agent'].name}:", self.message)
+        Log(colors.CYAN, f"Prompting {recipient.name}:", self.message)
 
-        message = GetCompletion(client=client, message=self.message, **recipient)
+        message = GetCompletion(client=client, message=self.message, agent=recipient)
 
-        Log(colors.CYAN, f"{recipient['agent'].name} response:", message)
+        Log(colors.CYAN, f"{recipient.name} response:", message)
         
         return message
     
