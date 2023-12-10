@@ -1,12 +1,1 @@
-{
-    "assistants": [
-        {
-            "id": "asst_8dSLcUy1qgR5utR2fSKOykBw",
-            "key": "coder"
-        },
-        {
-            "id": "asst_jnrfB38RIgZHyH9dIpC3tgen",
-            "key": "user"
-        }
-    ]
-}
+{"agents": [{"id": "asst_LxbpRGcYrEzqpnmkS4YrLPLY", "key": "coder"}, {"id": "asst_HXYaxLOYvMX6tKPVqCM6ydDO", "key": "user"}]}

@@ -12,19 +12,12 @@ from Tools.RequestAssistance import RequestAssistance
 from Tools.CreateFile import CreateFile
 from Tools.MoveFile import MoveFile
 from Tools.ExecutePyFile import ExecutePyFile
-from Utilities.Connection import GetKey
+from Utilities.Config import GetClient, current_model
 
-gpt3 = "gpt-3.5-turbo"
-gpt4 = "gpt-4-1106-preview"
-current_model = gpt4
-openai_key = GetKey()
-
-client = OpenAI(
-    api_key=openai_key,
-)
+client = GetClient()
     
 # Coder agent setup
-code_assistant = client.beta.assistants.create(
+coder_agent = client.beta.assistants.create(
     name=CodingAgent.name,
     instructions=CodingAgent.instructions,
     model=current_model,
@@ -37,7 +30,7 @@ code_assistant = client.beta.assistants.create(
 )
 
 # User agent setup
-user_proxy = client.beta.assistants.create(
+user_agent = client.beta.assistants.create(
     name=UserProxyAgent.name,
     instructions=UserProxyAgent.instructions,
     model=current_model,
@@ -49,8 +42,8 @@ user_proxy = client.beta.assistants.create(
 # Log the assistant ids to ./session.json
 with open("./session.json", "w") as session_file:
     assistants = [
-        {"id": code_assistant.id, "key": "coder"},
-        {"id": user_proxy.id, "key": "user"}
+        {"id": coder_agent.id, "key": "coder"},
+        {"id": user_agent.id, "key": "user"}
     ]
-    json.dump({"assistants": assistants}, session_file)
+    json.dump({"agents": assistants}, session_file)
 

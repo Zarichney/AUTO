@@ -9,9 +9,9 @@ from Utilities.Log import Log, colors
 class RequestAssistance(OpenAISchema):
     """Send messages to other specialized agents in this group chat."""
 
-    recipient: Literal["code_assistant"] = Field(
+    recipient: str = Field(
         ...,
-        description="code_assistant is a world class programming AI capable of executing python code.",
+        description="The name of the agent which is being requested for assistance",
     )
     message: str = Field(
         ...,
@@ -31,3 +31,17 @@ class RequestAssistance(OpenAISchema):
         Log(colors.CYAN, f"{recipient['agent'].name} response:", message)
         
         return message
+    
+    
+    
+    
+
+## Simple completion test:
+# completion = client.chat.completions.create(
+#   model=gpt3,
+#   messages=[
+#     {"role": "system", "content": system_message},
+#     {"role": "user", "content": "Compose a poem that explains the concept of recursion in programming"}
+#   ]
+# )
+# print(completion.choices[0].message)
