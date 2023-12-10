@@ -7,7 +7,7 @@ from utils import wprint, bcolors, get_completion
 gpt3 = "gpt-3.5-turbo"
 gpt4 = "gpt-4-1106-preview"
 current_model = gpt4
-openai_key = "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"
+openai_key = ""
 
 client = OpenAI(
     api_key=openai_key,
