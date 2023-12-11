@@ -13,9 +13,6 @@ user_agent:Agent = agency["user"]
 
 # Program execution
 
-## Sample mission statement:
-# Fetch the content of https://en.wikipedia.org/wiki/OpenAI and transpose this wikipedia page to a local markdown file
-
 user_message = sys.argv[1] if len(sys.argv) > 1 else input("\n\nAUTO: How can I help you?\n\n> ")
 
 Log(colors.ACTION, f"\nThinking...\n")
