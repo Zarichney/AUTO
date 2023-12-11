@@ -12,6 +12,7 @@ from Tools.ExecutePyFile import ExecutePyFile
 from Tools.RequestAssistance import RequestAssistance
 from Tools.CreateFile import CreateFile
 from Tools.MoveFile import MoveFile
+from Tools.MakePlan import MakePlan, description
 
 name = "MakePlan"
 
@@ -30,36 +31,45 @@ class MakePlan(OpenAISchema):
 
     def run(self, agency: Dict[str, Agent], client):
         prompt = "You are being engaged to create a plan. First review the following:\n\n"
-        prompt += "Prompt: " + self.prompt + "\n"
+        prompt += "Prompt: " + self.prompt + "\n\n"
         
         # Add team details
-        prompt += "Team: \n"
+        prompt += "# Team Composition: \n"
         for agent_key in agency:
             agent: Agent = agency[agent_key]
-            prompt += f"- Name: \"{agent.name}\"\n"
-            prompt += f"  - Description: {agent.description}\n"
-            prompt += f"  - Services: {agent.services}\n"
-        prompt += "\n\n"
+            prompt += f"## Name: \"{agent.name}\"\n"
+            prompt += f"### Description: {agent.description}\n"
+            prompt += f"### Services: {agent.services}\n"
+            prompt += "\n"
+        prompt += "\n"
             
         current_agent = GetAgent(client, agency, self.caller_name)
         
         # Add available tools to prompt:
-        prompt += "Available Tools: \n"
-        prompt += f"- RequestAssistance: {RequestAssistance.openai_schema}\n" 
-        prompt += f"- ReadFile: {ReadFile.openai_schema}\n"
-        prompt += f"- MoveFile: {MoveFile.openai_schema}\n"
-        prompt += f"- CreateFile: {CreateFile.openai_schema}\n"
-        prompt += f"- ExecutePyFile: {ExecutePyFile.openai_schema}\n"
+        prompt += "# Available Tools: \n"
+        prompt += f"## MakePlan\n{MakePlan.description}"
+        # TODO: replace with simplified tool explanation using description
+        prompt += f"## RequestAssistance\n{RequestAssistance.openai_schema}\n" 
+        prompt += f"## ReadFile\n{ReadFile.openai_schema}\n"
+        prompt += f"## MoveFile\n{MoveFile.openai_schema}\n"
+        prompt += f"## CreateFile\n{CreateFile.openai_schema}\n"
+        prompt += f"## ExecutePyFile:\n{ExecutePyFile.openai_schema}\n"
+        prompt += "\n"
     
         # Instruction to review inputs and make a plan
-        prompt += "\nNow, with an understanding the goal, analyze the team's dynamics along with knowing what tools they have at their disposal,"
-        prompt += "\n\t\tGENERATE A PLAN\t\t\n\n"
+        prompt += "Now, with an understanding the goal, analyze the team's dynamics along with knowing what tools they have at their disposal,\n"
+        prompt += "\t\tGENERATE A PLAN\t\t\n\n"
         prompt += "The plan is a workflow of 1-12 actionable steps that will be executed to accomplish the mission.\n"
-        prompt += "An Actional Step is defined as a single response (command or query) or tool usage that is conducted by a single agent.\n"
+        prompt += "An Actional Step is specific instruction conducted by a single agent as either a single response (command or query) or a tool usage\n"
         prompt += "Delegation is considered an actional step: it's the usage of the 'RequestAssistance' tool.\n\n"
         prompt += "The plan format adhere's to the following structure:\n"
-        prompt += "<step_number>. <agent_name>: <command, query or tool>\n"
-        prompt += "\nExample: \"1. Coder: Create the script\"\n\n"
+        prompt += "<step_number> + \". \" + <agent_name> + \": \" + <command | query | tool_usage> + (optional: \"using tool:'\" + <tool_name> + \"'\")\n"
+        prompt += "\nMulti Step Example:\n"
+        prompt += "\t\"1. Coder: Create the script using tool 'CreateFile'\"\n"
+        prompt += "\t\"2. Coder: Provide QA with the generated script to do a code review using tool 'RequestAssistance'\"\n"
+        prompt += "\t\"3. QA: Analyze script and provide feedback using tool 'ReadFile'\"\n"
+        prompt += "\nSample of a simple one liner plan:\n"
+        prompt += "\t\"1. User Agent: I will respond to the user's prompt\"\n"
         
         # Plan tweaking
         prompt += "Additional considerations:\n"
@@ -77,9 +87,10 @@ class MakePlan(OpenAISchema):
         prompt += "  - The invocation of the tool 'RequestAssistance' is to be it's own step in the plan, ensuring proper delegation.\n"
         prompt += "- Size complexity will depend on the context so use your judgement.\n"
         prompt += "  - A good rule of thumb is that a resonably complex plan involves more than 8 actionable steps.\n"
-        prompt += "  - It is also acceptable that the prompt (command or query) is as simple as a one step plan"
-        
-        prompt += "\n\nThink step by step. Good luck, you are great a this!\n"
+        prompt += "  - It is also acceptable that the prompt (command or query) is as simple as a one step plan\n"
+
+        prompt += "\n\nTHE GOAL IN PLAN CREATION IS TO SIMPLY CONSIDER THE PROMPT AGAINST THE ENVIRONMENT (AGENTS AND TOOLS AVAILABLE) WITH THE LEAST AMOUNT OF ACTIONABLE STEPS NECESSARY\n\n"
+        prompt += "Think step by step. Good luck, you are great a this!\n"
             
         Log(colors.ACTION, f"{current_agent.name} is planning...")
 
