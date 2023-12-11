@@ -37,3 +37,5 @@ Enjoy exploring the capacities of our AI-driven initiative, where innovation and
 # Samples
 
 - Fetch the content of https://en.wikipedia.org/wiki/OpenAI and transpose this wikipedia page to a local markdown file
+
+- Create a Python script that can flawlessly scrape the internet for food recipes based on a user-provided input of a food item name (e.g., 'French Onion Burger'). The script retrieves a minimum of 5 matching recipes from various sites, extracting image URLs, ingredients, servings, prep time, cooking time, directions, and optionally, any notes. All extracted data for each recipe is saved into a JSON file, organized as an array of recipe objects, encapsulating the respective information fields

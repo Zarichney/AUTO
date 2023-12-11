@@ -44,8 +44,8 @@ def GetSession(client: OpenAI):
                 client.beta.assistants.retrieve(agentConfig["id"]),
             )
 
-    def request_assistance(recipient_name, message):
-        result = RequestAssistance(recipient_name=recipient_name, message=message).run(
+    def request_assistance(caller_name, recipient_name, instruction):
+        result = RequestAssistance(caller_name=caller_name, recipient_name=recipient_name,instruction=instruction).run(
             agency, client
         )
         return result

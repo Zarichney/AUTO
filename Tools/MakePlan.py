@@ -12,18 +12,13 @@ from Tools.ExecutePyFile import ExecutePyFile
 from Tools.RequestAssistance import RequestAssistance
 from Tools.CreateFile import CreateFile
 from Tools.MoveFile import MoveFile
-from Tools.MakePlan import MakePlan, description
-
-name = "MakePlan"
-
-description = """
-Used to review the command or query against the environment (team and tools resources available) to generate a plan of action items.
-Inputs: caller_name, prompt
-Output: A customized plan
-"""
 
 class MakePlan(OpenAISchema):
-    f"Tool '{name}': {description}" # todo: propagate this change to other tools and get the name/desc integrated into agent_setps
+    """
+    Used to review the command or query against the environment (team and tools resources available) to generate a plan of action items.
+    Inputs: caller_name, prompt
+    Output: A customized plan
+    """
 
     caller_name: str = Field(..., description="The name of the assistant that invoked this tool")
 
@@ -47,8 +42,6 @@ class MakePlan(OpenAISchema):
         
         # Add available tools to prompt:
         prompt += "# Available Tools: \n"
-        prompt += f"## MakePlan\n{MakePlan.description}"
-        # TODO: replace with simplified tool explanation using description
         prompt += f"## RequestAssistance\n{RequestAssistance.openai_schema}\n" 
         prompt += f"## ReadFile\n{ReadFile.openai_schema}\n"
         prompt += f"## MoveFile\n{MoveFile.openai_schema}\n"
@@ -96,7 +89,7 @@ class MakePlan(OpenAISchema):
 
         plan = GetCompletion(client=client, message=prompt, agent=current_agent, useTools=False)
         
-        plan += "\nNext what needs to be done is to use my tools to accomplish step one, or use the tool 'RequestAssistance' to request help from another agent.\n"
+        plan += "\n\nNext: what needs to be done is to use my tools to accomplish step one, or use the tool 'RequestAssistance' to request help from another agent.\n"
 
         Log(colors.COMMUNICATION, f"\nPlan Generated:\n{plan}\n")
         

@@ -3,7 +3,6 @@
 import os
 from instructor import OpenAISchema
 from pydantic import Field
-
 from Utilities.Log import Log, colors
 
 class CreateFile(OpenAISchema):
@@ -12,7 +11,10 @@ class CreateFile(OpenAISchema):
     If this is a temporary file, it can simply be created at the default location of ./ai-working-dir/.
     Alternatively a file can be created at a specified location.
     Overwriting is not the default behavior. It is encouraged to always created a new file with a unique name.
+    Inputs: file_name, working_dir, body, overwrite
+    Output: A confirmation message
     """
+    
     file_name: str = Field(
         ..., description="The name of the file including the extension"
     )
@@ -20,7 +22,10 @@ class CreateFile(OpenAISchema):
         default="./ai-working-dir/",
         description="The path to the directory to be write files to."
     )
-    body: str = Field(..., description="Correct contents of a file")
+    body: str = Field(
+        ...,
+        description="The actual contents contents of a file"
+    )
     overwrite: str = Field(
         default=False,
         description="If true, will overwrite the file if it already exists."
