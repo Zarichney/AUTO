@@ -1,9 +1,11 @@
 # Utilities/Config.py
 
 import json
+from typing import Dict
 from openai import OpenAI
 from Agents.Agent import Agent
 from Tools.ReadFile import ReadFile
+from Tools.MakePlan import MakePlan
 from Tools.RequestAssistance import RequestAssistance
 from Tools.CreateFile import CreateFile
 from Tools.MoveFile import MoveFile
@@ -29,37 +31,84 @@ def GetKey():
         return file.read().strip()
 
 
+
 def GetSession(client: OpenAI):
     agency = {}
 
     with open("./session.json", "r") as session_file:
         session = json.load(session_file)
         for agentConfig in session["agents"]:
-            agency[agentConfig["key"]] = Agent(agentConfig["key"], agentConfig["id"], client.beta.assistants.retrieve(agentConfig["id"]))
+            agency[agentConfig["key"]] = Agent(
+                agentConfig["key"],
+                agentConfig["id"],
+                client.beta.assistants.retrieve(agentConfig["id"]),
+            )
+
+    def request_assistance(recipient_name, message):
+        result = RequestAssistance(recipient_name=recipient_name, message=message).run(
+            agency, client
+        )
+        return result
+
+    def make_plan(caller_name, prompt):
+        result = MakePlan(caller_name=caller_name, prompt=prompt).run(agency, client)
+        return result
 
     # Update API with latest from project
     for agent_key in agency:
-        agent = agency[agent_key]
-        agent.name = agent.agent.name
+        agent: Agent = agency[agent_key]
         agent_tools = []
 
-        if agent_key == "coder":
+        if agent_key == "user":
             agent_tools = (
                 [
+                    {"type": "function", "function": MakePlan.openai_schema},
+                    {"type": "function", "function": RequestAssistance.openai_schema},
+                    {"type": "function", "function": ReadFile.openai_schema},
+                    {"type": "function", "function": MoveFile.openai_schema},
+                ],
+            )
+            agent.tools = [make_plan, request_assistance, ReadFile, MoveFile]
+
+        elif agent_key == "coder":
+            agent_tools = (
+                [
+                    {"type": "function", "function": MakePlan.openai_schema},
+                    {"type": "function", "function": RequestAssistance.openai_schema},
                     {"type": "function", "function": ReadFile.openai_schema},
                     {"type": "function", "function": MoveFile.openai_schema},
                     {"type": "function", "function": CreateFile.openai_schema},
                     {"type": "function", "function": ExecutePyFile.openai_schema},
                 ],
             )
-            agent.tools = [ReadFile, MoveFile, CreateFile, ExecutePyFile]   
-        elif agent_key == "user":
+            agent.tools = [
+                make_plan,
+                request_assistance,
+                ReadFile,
+                MoveFile,
+                CreateFile,
+                ExecutePyFile,
+            ]
+
+        elif agent_key == "qa":
             agent_tools = (
                 [
+                    {"type": "function", "function": MakePlan.openai_schema},
                     {"type": "function", "function": RequestAssistance.openai_schema},
+                    {"type": "function", "function": ReadFile.openai_schema},
+                    {"type": "function", "function": MoveFile.openai_schema},
+                    {"type": "function", "function": CreateFile.openai_schema},
+                    {"type": "function", "function": ExecutePyFile.openai_schema},
                 ],
             )
-            agent.tools = [RequestAssistance]   
+            agent.tools = [
+                make_plan,
+                request_assistance,
+                ReadFile,
+                MoveFile,
+                CreateFile,
+                ExecutePyFile,
+            ]
 
         # Commented out temporarily: there seems to be an server side API issue
         # Received a 400 BadRequest because the tools type "function" is not being accepted...

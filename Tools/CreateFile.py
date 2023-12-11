@@ -4,14 +4,15 @@ import os
 from instructor import OpenAISchema
 from pydantic import Field
 
+from Utilities.Log import Log, colors
+
 class CreateFile(OpenAISchema):
     """
-    Python file with a succinct appropriate name and a version number that represents the iteration. Containing code that can be saved and executed locally at a later time. This environment has access to all standard Python packages and the internet.
+    Tool to create a file with with an extension. 
+    If this is a temporary file, it can simply be created at the default location of ./ai-working-dir/.
+    Alternatively a file can be created at a specified location.
+    Overwriting is not the default behavior. It is encouraged to always created a new file with a unique name.
     """
-    chain_of_thought: str = Field(
-        ...,
-        description="Think step by step to determine the correct actions that are needed to be taken in order to complete the task.",
-    )
     file_name: str = Field(
         ..., description="The name of the file including the extension"
     )
@@ -20,15 +21,33 @@ class CreateFile(OpenAISchema):
         description="The path to the directory to be write files to."
     )
     body: str = Field(..., description="Correct contents of a file")
+    overwrite: str = Field(
+        default=False,
+        description="If true, will overwrite the file if it already exists."
+    )
 
     def run(self):
         
+        # If file already exists, return message
+        if os.path.exists(self.working_dir + self.file_name):
+            if self.overwrite:
+                Log(colors.ACTION, f"Overwriting file: {self.working_dir + self.file_name}")
+            else:
+                result = f"File {self.working_dir + self.file_name} already exists.\n"
+                result += "Specify to overwrite if you this is intended, or\n"
+                result += "increment the file version for a unique file name"
+                Log(colors.ERROR, result)
+                return result
+        
         # Create directory if it doesnt exist already
         if not os.path.exists(self.working_dir):
+            Log(colors.ACTION, f"Creating directory: {self.working_dir}")
             os.makedirs(self.working_dir)
         
         # Write file
         with open(self.working_dir + self.file_name, "w") as f:
             f.write(self.body)
-
-        return "File written to " + self.file_name
+            
+        result = "File written to: " + self.file_name
+        Log(colors.RESULT, result)
+        return result
