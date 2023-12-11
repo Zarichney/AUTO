@@ -13,10 +13,16 @@ from Tools.RequestAssistance import RequestAssistance
 from Tools.CreateFile import CreateFile
 from Tools.MoveFile import MoveFile
 
+name = "MakePlan"
+
+description = """
+Used to review the command or query against the environment (team and tools resources available) to generate a plan of action items.
+Inputs: caller_name, prompt
+Output: A customized plan
+"""
+
 class MakePlan(OpenAISchema):
-    """
-    Used to review the command or query against the environment (team and tools resources available) to generate a plan of action items
-    """
+    f"Tool '{name}': {description}" # todo: propagate this change to other tools and get the name/desc integrated into agent_setps
 
     caller_name: str = Field(..., description="The name of the assistant that invoked this tool")
 
