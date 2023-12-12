@@ -8,9 +8,11 @@ from Utilities.Log import Log, colors
 from Utilities.Config import current_model
 from Tools.Plan import Plan
 from Tools.Delegate import Delegate
+from Tools.Inquire import Inquire
 from Tools.ReadFile import ReadFile
 from Tools.ExecutePyFile import ExecutePyFile
 from Tools.CreateFile import CreateFile
+from Tools.DownloadFile import DownloadFile
 from Tools.MoveFile import MoveFile
 
 class Agent:
@@ -29,8 +31,8 @@ class Agent:
         self.waiting_on_response = False
         self.task_delegated = False
         self.tools = []
-        self.shared_tools = [ReadFile,CreateFile,MoveFile,ExecutePyFile]
-        self.internal_tools = [Plan,Delegate]
+        self.shared_tools = [ReadFile,CreateFile,DownloadFile,MoveFile,ExecutePyFile]
+        self.internal_tools = [Plan,Delegate,Inquire]
         self.running_tool = False
         self.setup_tools()
 

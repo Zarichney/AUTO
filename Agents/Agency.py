@@ -8,8 +8,10 @@ from Agents.Agent import Agent
 from Agents import TeamMember, UserAgent, CodingAgent, QaAgent, RecipeAgent
 from Tools.Plan import Plan
 from Tools.Delegate import Delegate
+from Tools.Inquire import Inquire
 from Tools.ReadFile import ReadFile
 from Tools.CreateFile import CreateFile
+from Tools.DownloadFile import DownloadFile
 from Tools.MoveFile import MoveFile
 from Tools.ExecutePyFile import ExecutePyFile
 from Utilities.Config import GetClient, current_model, session_file
@@ -43,7 +45,7 @@ class Agency:
             for agent_dict in session["agents"]:
 
                 thread = None
-                if "thread_id" in agent_dict:
+                if "thread_id" in agent_dict and agent_dict["thread_id"]:
                     thread = self.client.beta.threads.retrieve(agent_dict["thread_id"])
 
                 self.add_assistant(Agent(
@@ -52,10 +54,10 @@ class Agency:
                     thread
                 ))
 
-    def add_assistant(self, assistant: Assistant, tools=None):
+    def add_assistant(self, assistant: Assistant, internalTools=None):
         self.agents.append(Agent(self.client, assistant))
-        if tools is not None:
-            for tool in tools:
+        if internalTools is not None:
+            for tool in internalTools:
                 self.agents[-1].add_tool(tool)
 
     def get_agent(self, name):
@@ -124,6 +126,14 @@ class Agency:
             mission=mission,
             team_planning = team_planning,
             ).run(agency=self.agency)
+
+    def internal_tool_inquire(self, recipient_name, prompt, chain_of_thought, useTools):
+        return Inquire(
+            recipient_name=recipient_name,
+            prompt = prompt,
+            chain_of_thought = chain_of_thought,
+            useTools = useTools,
+            ).run(agency=self.agency)
     
     def create_agents(self):
         
@@ -134,32 +144,35 @@ class Agency:
             description=UserAgent.description,
             instructions=UserAgent.instructions + team_member_instructions,
             model=current_model,
-            metadata={"key": "user", "services": UserAgent.services},
+            metadata={"services": UserAgent.services},
             tools=[
                 {"type": "function", "function": Plan.openai_schema},
                 {"type": "function", "function": Delegate.openai_schema},
+                {"type": "function", "function": Inquire.openai_schema},
                 {"type": "function", "function": ReadFile.openai_schema},
                 {"type": "function", "function": MoveFile.openai_schema},
-                {"type": "function", "function": Delegate.openai_schema},
+                {"type": "function", "function": DownloadFile.openai_schema},
                 {"type": "function", "function": ExecutePyFile.openai_schema},
             ],
-        ), tools=[self.internal_tool_delegate, self.internal_tool_plan])
+        ), internalTools=[self.internal_tool_delegate, self.internal_tool_plan, self.internal_tool_inquire])
         
         self.add_assistant(assistant=self.client.beta.assistants.create(
             name=CodingAgent.name,
             description=CodingAgent.description,
             instructions=CodingAgent.instructions + team_member_instructions,
             model=current_model,
-            metadata={"key": "coder", "services": CodingAgent.services},
+            metadata={"services": CodingAgent.services},
             tools=[
                 {"type": "function", "function": Plan.openai_schema},
                 {"type": "function", "function": Delegate.openai_schema},
+                {"type": "function", "function": Inquire.openai_schema},
                 {"type": "function", "function": ReadFile.openai_schema},
                 {"type": "function", "function": MoveFile.openai_schema},
                 {"type": "function", "function": CreateFile.openai_schema},
+                {"type": "function", "function": DownloadFile.openai_schema},
                 {"type": "function", "function": ExecutePyFile.openai_schema},
             ],
-        ), tools=[self.internal_tool_delegate, self.internal_tool_plan])
+        ), internalTools=[self.internal_tool_delegate, self.internal_tool_plan, self.internal_tool_inquire])
         
         # QA agent setup
         self.add_assistant(self.client.beta.assistants.create(
@@ -167,32 +180,36 @@ class Agency:
             description=QaAgent.description,
             instructions=QaAgent.instructions + team_member_instructions,
             model=current_model,
-            metadata={"key": "qa", "services": QaAgent.services},
+            metadata={"services": QaAgent.services},
             tools=[
                 {"type": "function", "function": Plan.openai_schema},
                 {"type": "function", "function": Delegate.openai_schema},
+                {"type": "function", "function": Inquire.openai_schema},
                 {"type": "function", "function": ReadFile.openai_schema},
                 {"type": "function", "function": MoveFile.openai_schema},
                 {"type": "function", "function": CreateFile.openai_schema},
+                {"type": "function", "function": DownloadFile.openai_schema},
                 {"type": "function", "function": ExecutePyFile.openai_schema},
             ],
-        ), tools=[self.internal_tool_delegate, self.internal_tool_plan])
+        ), internalTools=[self.internal_tool_delegate, self.internal_tool_plan, self.internal_tool_inquire])
         
         self.add_assistant(self.client.beta.assistants.create(
             name=RecipeAgent.name,
             description=RecipeAgent.description,
             instructions=RecipeAgent.instructions + team_member_instructions,
             model=current_model,
-            metadata={"key": "recipe", "services": RecipeAgent.services},
+            metadata={"services": RecipeAgent.services},
             tools=[
                 {"type": "function", "function": Plan.openai_schema},
                 {"type": "function", "function": Delegate.openai_schema},
+                {"type": "function", "function": Inquire.openai_schema},
                 {"type": "function", "function": ReadFile.openai_schema},
                 {"type": "function", "function": MoveFile.openai_schema},
                 {"type": "function", "function": CreateFile.openai_schema},
+                {"type": "function", "function": DownloadFile.openai_schema},
                 {"type": "function", "function": ExecutePyFile.openai_schema},
             ],
-        ), tools=[self.internal_tool_delegate, self.internal_tool_plan])
+        ), internalTools=[self.internal_tool_delegate, self.internal_tool_plan, self.internal_tool_inquire])
         
         # Store the list of assistant ids to ./session.json
         with open(session_file, "w") as session_file:
@@ -200,7 +217,7 @@ class Agency:
             for agent in self.agents:
                 agent_data.append({
                     "id": agent.id,
-                    "thread_id": agent.thread_id
+                    "thread_id": agent.thread_id if agent.thread_id else ""
                 })
             session_file.write(json.dumps({"agents": agent_data}) + "\n")
 

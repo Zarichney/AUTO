@@ -21,8 +21,10 @@ from Agents import UserAgent, CodingAgent, QaAgent, RecipeAgent
 from Tools.ReadFile import ReadFile
 from Tools.Plan import Plan
 from Tools.Delegate import Delegate
+from Tools.Inquire import Inquire
 from Tools.CreateFile import CreateFile
 from Tools.MoveFile import MoveFile
+from Tools.DownloadFile import DownloadFile
 from Tools.ExecutePyFile import ExecutePyFile
 
 def get_team_instruction():
@@ -40,7 +42,7 @@ def get_team_instruction():
     # Make them aware of the tools available:
     team_member_instructions += tool_instruction
     team_member_instructions += "\n## Tools\n"
-    for toolFile in [ReadFile, CreateFile, MoveFile, ExecutePyFile, Delegate, Plan]:
+    for toolFile in [ReadFile, CreateFile, MoveFile, DownloadFile, ExecutePyFile, Delegate, Plan, Inquire]:
         schema = toolFile.openai_schema
         team_member_instructions += "### " + schema['name'] + "\n"
         team_member_instructions += schema['description'] + "\n\n"
