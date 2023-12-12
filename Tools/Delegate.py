@@ -7,7 +7,9 @@ from Agents.Agency import Agency
 from Utilities.Log import Log, Debug, colors
 
 class Delegate(OpenAISchema):
-    """Hand off the current action item to another specialized agent"""
+    """
+    Hand off the current action item to another specialized agent
+    """
 
     recipient_name: str = Field(
         ...,
@@ -23,7 +25,7 @@ class Delegate(OpenAISchema):
     )
 
     def run(self, agency: Agency):
-        # find agent by name in agency
+        
         recipient: Agent = agency.get_agent(self.recipient_name)
         current_agent: Agent = agency.active_agent
 

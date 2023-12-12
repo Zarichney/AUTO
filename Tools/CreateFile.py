@@ -8,15 +8,13 @@ from Utilities.Log import Log, colors
 class CreateFile(OpenAISchema):
     """
     Tool to create a file with with an extension. 
-    If this is a temporary file, it can simply be created at the default location of ./ai-working-dir/.
-    Alternatively a file can be created at a specified location.
+    If this is a temporary file, it can simply be created at the default location of ./ai-working-dir/. Alternatively a file can be created at a specified location.
     Overwriting is not the default behavior. It is encouraged to always created a new file with a unique name.
-    Inputs: file_name, working_dir, body, overwrite
-    Output: A confirmation message
     """
     
     file_name: str = Field(
-        ..., description="The name of the file including the extension"
+        ..., 
+        description="The name of the file including the extension"
     )
     working_dir: str = Field(
         default="./ai-working-dir/",

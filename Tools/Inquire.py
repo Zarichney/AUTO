@@ -7,7 +7,9 @@ from Agents.Agency import Agency
 from Utilities.Log import Log, Debug, colors
 
 class Inquire(OpenAISchema):
-    """Used to get information from another agent"""
+    """
+    Used to get information from another agent
+    """
 
     recipient_name: str = Field(
         ...,

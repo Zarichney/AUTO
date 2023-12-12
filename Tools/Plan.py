@@ -8,9 +8,7 @@ from Agents.Agency import Agency
 
 class Plan(OpenAISchema):
     """
-    Used to review the command or query against the environment (team and tools resources available) to generate a plan of action items.
-    Inputs: caller_name, prompt
-    Output: A customized plan
+    Used to review mission against the environment (team and/or tools resources available) to generate a workflow of action items.
     """
 
     mission: str = Field(
