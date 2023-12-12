@@ -59,7 +59,7 @@ while True:
 
     # The agency has done their work and require user feedback
 
-    Log(colors.RESULT, f"{agency.active_agent.name}: {response}")
+    Log(colors.RESULT, f"\nAUTO:\n{response}\n")
 
     user_message = input("Waiting for reply from user. Type 'exit' to terminate\n\n> ")
 
