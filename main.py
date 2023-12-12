@@ -46,6 +46,11 @@ agency.plan = user_agent.get_completion(message=prompt)
 # todo
 # agency.broadcast(message=the_mission_plan)
 
+prompt = "Execute the plan accordingly.\n"
+prompt += "If you are not the agent in step 1, then use your tool 'Delegate' on the first agent in the plan.\n"
+prompt += "Providing them with their mission\n"
+Log(colors.ACTION, f"\nExecuting Plan...\n\n")
+
 # Continue interacting with user agent until the plan is complete
 while True:
 

@@ -204,15 +204,7 @@ class Agency:
                 })
             session_file.write(json.dumps({"agents": agent_data}) + "\n")
 
-    def operate(self, user_prompt = None):
-
-        if user_prompt is None:
-            prompt = "Execute the plan accordingly.\n"
-            prompt += "If you are not the agent in step 1, then use your tool 'Delegate' on the first agent in the plan.\n"
-            prompt += "Providing them with their mission\n"
-            Log(colors.ACTION, f"\nExecuting Plan...\n\n")
-        else:
-            prompt = user_prompt
+    def operate(self, prompt = None):
 
         response = self.active_agent.get_completion(message=prompt)
         
