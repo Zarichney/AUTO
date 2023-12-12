@@ -44,4 +44,6 @@ TODO add this
 
 - Fetch the content of https://en.wikipedia.org/wiki/OpenAI and transpose this wikipedia page to a local markdown file
 
+- I'd like some analysis help on creating a web scraper as a python utility. I intent on developing web scraping tool specifically for food recipes. I've heard of the python package 'beautifulsoup' is useful, but I've also found 'https://raw.githubusercontent.com/hhursev/recipe-scrapers/main/README.rst' and would like to know how to properly build a flawless web scraper for food recipes.
+
 - Create a Python script that can flawlessly scrape the internet for food recipes based on a user-provided input of a food item name (e.g., 'French Onion Burger'). The script retrieves a minimum of 5 matching recipes from various sites, extracting image URLs, ingredients, servings, prep time, cooking time, directions, and optionally, any notes. All extracted data for each recipe is saved into a JSON file, organized as an array of recipe objects, encapsulating the respective information fields
