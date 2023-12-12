@@ -2,14 +2,14 @@
 
 import sys
 from Agents.Agent import Agent
-from Utilities.OpenAiHelper import GetCompletion
+from Agents.Agency import Agency
+from Agents import UserAgent
+from Utilities.Helpers import GetCompletion
 from Utilities.Log import Log, colors
-from Utilities.Config import GetClient, GetSession
 
-client = GetClient()
-agency = GetSession(client)
+agency = Agency(new_session=True)
 
-user_agent:Agent = agency["user"]
+user_agent:Agent = agency.get_agent(UserAgent.name)
 
 # Program execution
 
@@ -19,10 +19,10 @@ Log(colors.ACTION, f"\nThinking...\n")
         
 prompt = f"{user_agent.name}, I request your help\n"
 prompt += f"The user has prompted you for \"{user_message}\"\n"
-prompt += "You are to use your tool 'MakePlan' to generate a plan of action items to accomplish the mission.\n"
+prompt += "You are to use your tool 'Plan' to generate a plan of action items to accomplish the mission.\n"
 prompt += "Please invoke it and return the exact plan generated from the tool before we begin executing the plan.\n"
     
-the_mission_plan = GetCompletion(client, prompt, user_agent)
+the_mission_plan = GetCompletion(agency=agency, agent=user_agent, message=prompt)
 
 # agency['plan'] = the_mission_plan
 # agency['prompt'] = user_message
@@ -39,7 +39,7 @@ Log(colors.ACTION, f"\nExecuting Plan...\n\n")
 
 while True:
 
-    results = GetCompletion(client, prompt, user_agent)
+    results = GetCompletion(agency=agency, agent=user_agent, message=prompt)
 
     Log(colors.RESULT, f"{user_agent.name}: {results}")
     

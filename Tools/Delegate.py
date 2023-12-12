@@ -1,15 +1,13 @@
-# /Tools/RequestAssistance.py
+# /Tools/Delegate.py
 
-from typing import Dict
 from instructor import OpenAISchema
 from pydantic import Field
 from Agents.Agent import Agent
-from Utilities.Helpers import GetAgent
-from Utilities.OpenAiHelper import GetCompletion
+from Agents.Agency import Agency
+from Utilities.Helpers import GetCompletion
 from Utilities.Log import Log, colors
 
-
-class RequestAssistance(OpenAISchema):
+class Delegate(OpenAISchema):
     """Request assistant from another specialized agent"""
 
     caller_name: str = Field(
@@ -24,26 +22,23 @@ class RequestAssistance(OpenAISchema):
         description="Specify the task required for the recipient agent to complete. Recall the agency's plan and speak to the assistant in terms of the action items you want them to complete.",
     )
 
-    def run(self, agency: Dict[str, Agent], client):
+    def run(self, agency: Agency):
         # find agent by name in agency
-        recipient = GetAgent(client, agency, self.recipient_name)
-        current_agent = GetAgent(client, agency, self.caller_name)
+        recipient: Agent = agency.get_agent(self.recipient_name)
+        current_agent: Agent = agency.get_agent(self.caller_name)
 
         # prompt = f"Our agency's mission:\n"
         # prompt += f"{agency['prompt']}\n\n"
         # prompt += f"Our leader has determined the plan:\n"
         # prompt += f"{agency['plan']}\n\n"
         # prompt += f"I, {current_agent.name}, am seeking assistance from you {recipient.name}.\n"
-        prompt += "Could you help with the following instructions:\n"
+        prompt = "Could you help with the following instructions:\n"
         prompt += self.instruction
-
-        thread = client.beta.threads.create()
 
         Log(colors.COMMUNICATION, f"Prompting {recipient.name}:", self.instruction)
 
-        response = GetCompletion(
-            client=client, message=prompt, agent=recipient, thread=thread
-        )
+        # todo make this async so that the current agent can close the run while the recipient agent starts a new run
+        response = GetCompletion(agency=agency, agent=recipient, message=prompt)
 
         Log(colors.RESULT, f"{recipient.name} response:", response)
 

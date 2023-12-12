@@ -22,12 +22,18 @@ Each agent in the AUTO has been engineered to operate both independently and as 
 
 Enjoy exploring the capacities of our AI-driven initiative, where innovation and collaboration are at the core.
 
+# Prereqs
+
+TODO add this
+- IDE: VS Code
+- Python
+- Git
+
 # Set up
 
 1. `python -m venv env`
 2. `.\env\Script\activate`
 3. `pip install -r .\requirements.txt`
-4. `python agent_setup.py`
 
 # Get Started 
 
