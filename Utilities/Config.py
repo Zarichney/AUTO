@@ -6,6 +6,8 @@ gpt3 = "gpt-3.5-turbo"
 gpt4 = "gpt-4-1106-preview"
 current_model = gpt4
 
+session_file = "./session.json"
+
 def GetClient():
     openai_key = GetKey()
 

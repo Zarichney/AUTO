@@ -4,7 +4,6 @@ from instructor import OpenAISchema
 from pydantic import Field
 from Utilities.Log import Log, colors
 from Agents.Agent import Agent
-from Utilities.Helpers import GetCompletion
 from Tools.ReadFile import ReadFile
 from Tools.ExecutePyFile import ExecutePyFile
 from Tools.Delegate import Delegate
@@ -87,7 +86,7 @@ class Plan(OpenAISchema):
             
         Log(colors.ACTION, f"{current_agent.name} is planning...")
 
-        plan = GetCompletion(agency=agency, message=prompt, agent=current_agent, useTools=False)
+        plan = current_agent.get_completion(message=prompt, useTools=False)
         
         plan += "\n\nNext: what needs to be done is to use my tools to accomplish step one, or use the tool 'Delegate' to request help from another agent.\n"
 

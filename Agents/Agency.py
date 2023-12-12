@@ -10,15 +10,24 @@ from Tools.ReadFile import ReadFile
 from Tools.CreateFile import CreateFile
 from Tools.MoveFile import MoveFile
 from Tools.ExecutePyFile import ExecutePyFile
-from Utilities.Config import GetClient, current_model
+from Utilities.Config import GetClient, current_model, session_file
 from Utilities.Log import Log, colors
 
 class Agency:
     def __init__(self, new_session: bool = False):
         self.client:openai  = GetClient()
         self.agents = []
+        self.plan = None
+        self.prompt = None
         
-        with open("./session.json", "r") as session_file:
+        # if session_file does not exist, create file and force update new_session to True
+        if not os.path.exists(session_file):
+            new_session = True
+            with open(session_file, "w") as session_file:
+                session_file.write(json.dumps({"agents": []}) + "\n")
+        
+
+        with open(session_file, "r") as session_file:
             session = json.load(session_file)
 
         if new_session:
@@ -162,7 +171,7 @@ class Agency:
         ))
         
         # Store the list of assistant ids to ./session.json
-        with open("./session.json", "w") as session_file:
+        with open(session_file, "w") as session_file:
             agent_data = []
             for agent in self.agents:
                 agent_data.append({

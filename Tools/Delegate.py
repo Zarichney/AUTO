@@ -4,7 +4,6 @@ from instructor import OpenAISchema
 from pydantic import Field
 from Agents.Agent import Agent
 from Agents.Agency import Agency
-from Utilities.Helpers import GetCompletion
 from Utilities.Log import Log, colors
 
 class Delegate(OpenAISchema):
@@ -38,7 +37,7 @@ class Delegate(OpenAISchema):
         Log(colors.COMMUNICATION, f"Prompting {recipient.name}:", self.instruction)
 
         # todo make this async so that the current agent can close the run while the recipient agent starts a new run
-        response = GetCompletion(agency=agency, agent=recipient, message=prompt)
+        response = recipient.get_completion(message=prompt)
 
         Log(colors.RESULT, f"{recipient.name} response:", response)
 
