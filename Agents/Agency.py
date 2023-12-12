@@ -1,5 +1,7 @@
+# /Agents/Agency.py
 
 import json
+import os
 import openai
 from openai.types.beta.assistant import Assistant
 from Agents.Agent import Agent
@@ -11,7 +13,7 @@ from Tools.CreateFile import CreateFile
 from Tools.MoveFile import MoveFile
 from Tools.ExecutePyFile import ExecutePyFile
 from Utilities.Config import GetClient, current_model, session_file
-from Utilities.Log import Log, colors
+from Utilities.Log import Log, Debug, colors
 
 class Agency:
     def __init__(self, new_session: bool = False):
@@ -19,14 +21,17 @@ class Agency:
         self.agents = []
         self.plan = None
         self.prompt = None
-        
+        self.active_agent: Agent = None
+
+        self.setup(new_session)
+
+    def setup(self, new_session: bool = False):
         # if session_file does not exist, create file and force update new_session to True
         if not os.path.exists(session_file):
             new_session = True
             with open(session_file, "w") as session_file:
                 session_file.write(json.dumps({"agents": []}) + "\n")
         
-
         with open(session_file, "r") as session_file:
             session = json.load(session_file)
 
@@ -36,14 +41,22 @@ class Agency:
             self.create_agents()
         else:
             for agent_dict in session["agents"]:
+
+                thread = None
+                if "thread_id" in agent_dict:
+                    thread = self.client.beta.threads.retrieve(agent_dict["thread_id"])
+
                 self.add_assistant(Agent(
                     self.client,
                     self.client.beta.assistants.retrieve(agent_dict["id"]),
-                    agent_dict["thread_id"]
+                    thread
                 ))
 
-    def add_assistant(self, assistant: Assistant, thread_id=None):
-        self.agents.append(Agent(self.client, assistant, thread_id))
+    def add_assistant(self, assistant: Assistant, tools=None):
+        self.agents.append(Agent(self.client, assistant))
+        if tools is not None:
+            for tool in tools:
+                self.agents[-1].add_tool(tool)
 
     def get_agent(self, name):
         for agent in self.agents:
@@ -94,18 +107,22 @@ class Agency:
             
         return None
 
-    def internal_tool_delegate(self, caller_name, recipient_name, instruction):
-        return Delegate(caller_name=caller_name, recipient_name=recipient_name, instruction=instruction).run(agency=self.agency)
+    def internal_tool_delegate(self, caller_name, recipient_name, artifact, instruction):
+        return Delegate(
+            caller_name=caller_name, 
+            recipient_name=recipient_name, 
+            artifact=artifact,
+            instruction=instruction
+            ).run(agency=self.agency)
 
-    def internal_tool_plan(self, caller_name, prompt):
-        return Plan(caller_name=caller_name, prompt=prompt).run(agency=self.agency)
+    def internal_tool_plan(self, caller_name, mission):
+        return Plan(caller_name=caller_name, mission=mission).run(agency=self.agency)
     
-    # private function to create all agents
     def create_agents(self):
         
         team_member_instructions = TeamMember.get_team_instruction()
         
-        user_agent = self.client.beta.assistants.create(
+        self.add_assistant(self.client.beta.assistants.create(
             name=UserAgent.name,
             description=UserAgent.description,
             instructions=UserAgent.instructions + team_member_instructions,
@@ -113,14 +130,14 @@ class Agency:
             metadata={"key": "user", "services": UserAgent.services},
             tools=[
                 {"type": "function", "function": Plan.openai_schema},
+                {"type": "function", "function": Delegate.openai_schema},
                 {"type": "function", "function": ReadFile.openai_schema},
                 {"type": "function", "function": MoveFile.openai_schema},
                 {"type": "function", "function": Delegate.openai_schema},
+                {"type": "function", "function": ExecutePyFile.openai_schema},
             ],
-        )
-        self.add_assistant(Agent(client=self.client,assistant=user_agent))
+        ), tools=[self.internal_tool_delegate, self.internal_tool_plan])
         
-        # Coder agent setup
         self.add_assistant(assistant=self.client.beta.assistants.create(
             name=CodingAgent.name,
             description=CodingAgent.description,
@@ -135,10 +152,10 @@ class Agency:
                 {"type": "function", "function": CreateFile.openai_schema},
                 {"type": "function", "function": ExecutePyFile.openai_schema},
             ],
-        ))
+        ), tools=[self.internal_tool_delegate, self.internal_tool_plan])
         
         # QA agent setup
-        self.add_assistant(assistant=self.client.beta.assistants.create(
+        self.add_assistant(self.client.beta.assistants.create(
             name=QaAgent.name,
             description=QaAgent.description,
             instructions=QaAgent.instructions + team_member_instructions,
@@ -152,7 +169,7 @@ class Agency:
                 {"type": "function", "function": CreateFile.openai_schema},
                 {"type": "function", "function": ExecutePyFile.openai_schema},
             ],
-        ))
+        ), tools=[self.internal_tool_delegate, self.internal_tool_plan])
         
         self.add_assistant(self.client.beta.assistants.create(
             name=RecipeAgent.name,
@@ -168,7 +185,7 @@ class Agency:
                 {"type": "function", "function": CreateFile.openai_schema},
                 {"type": "function", "function": ExecutePyFile.openai_schema},
             ],
-        ))
+        ), tools=[self.internal_tool_delegate, self.internal_tool_plan])
         
         # Store the list of assistant ids to ./session.json
         with open(session_file, "w") as session_file:
@@ -179,3 +196,22 @@ class Agency:
                     "thread_id": agent.thread_id
                 })
             session_file.write(json.dumps({"agents": agent_data}) + "\n")
+
+    def operate(self, user_prompt = None):
+
+        if user_prompt is None:
+            prompt = "Execute the plan accordingly.\n"
+            prompt += "If you are not the agent in step 1, then use your tool 'Delegate' on the first agent in the plan.\n"
+            prompt += "Providing them with their mission\n"
+            self.active_agent = self.get_agent(UserAgent.name)
+            Log(colors.ACTION, f"\nExecuting Plan...\n\n")
+        else:
+            prompt = user_prompt
+
+        response = self.active_agent.get_completion(message=prompt)
+        
+        while self.active_agent.waiting_on_response == False:
+            response = self.active_agent.get_completion()
+            Debug(f"{self.active_agent.name}: {response}")
+        
+        return response

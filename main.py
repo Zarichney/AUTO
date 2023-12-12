@@ -18,31 +18,43 @@ user_message = sys.argv[1] if len(sys.argv) > 1 else input("\n\nAUTO: How can I 
 Log(colors.ACTION, f"\nThinking...\n")
         
 prompt = f"{user_agent.name}, I request your help\n"
-prompt += f"The user has prompted you for \"{user_message}\"\n"
-prompt += "You are to use your tool 'Plan' to generate a plan of action items to accomplish the mission.\n"
-prompt += "Please invoke it and return the exact plan generated from the tool before we begin executing the plan.\n"
+prompt += f"The user has prompted our agency with:\n\n\"{user_message}\"\n\n"
+prompt += "Use your tool 'Plan' to generate a plan of action items to accomplish the mission.\n"
+prompt += "Please invoke it and return the exact plan generated. We will get the user's acceptance before executing the plan\n"
     
-the_mission_plan = user_agnet.get_completion(message=prompt)
+agency.prompt = user_message
 
-# todo:
-# agency['plan'] = the_mission_plan
-# agency['prompt'] = user_message
+response = user_agent.get_completion(message=prompt)
 
-Log(colors.RESULT, f"{user_agent.name}: {the_mission_plan}")
+Log(colors.RESULT, f"{user_agent.name}: {response}")
 
-prompt = "Execute the plan accordingly.\n"
-prompt += "Use your tool 'RequestAssisance' on the first agent in the plan,"
-prompt += " providing them with the plan and their instructions\n"
+approval_msg = "Waiting for feedback from user. Type 'approve' to execute the plan"
 
-prompt += f"\n\nTHE PLAN:\n{the_mission_plan}"
+user_message = input(f"{approval_msg}\n\n> ")
 
-Log(colors.ACTION, f"\nExecuting Plan...\n\n")
+while user_message.lower() != "approve":
+    response = user_agent.get_completion(message=user_message, useTools=False)
+    Log(colors.RESULT, f"{user_agent}: {response}")
+    user_message = input(f"{approval_msg}\n\n> ")
+    break
+
+prompt = "The user has approved the plan.\n"
+prompt += "In order to broadcast the plan to the agency, please respond with the user approved plan and nothing else.\n"
+
+agency.plan = user_agent.get_completion(message=prompt)
+
+# todo
+# agency.broadcast(message=the_mission_plan)
 
 # Continue interacting with user agent until the plan is complete
 while True:
-    results = user_agent.get_completion(message=prompt)
 
-    Log(colors.RESULT, f"{user_agent.name}: {results}")
+    # This initiates all agents to co-operate the mission
+    response = agency.operate(user_message=prompt)
+
+    # The agency has done their work and require user feedback
+
+    Log(colors.RESULT, f"{agency.active_agent.name}: {response}")
 
     user_message = input("Waiting for reply from user. Type 'exit' to terminate\n\n> ")
 

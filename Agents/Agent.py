@@ -1,9 +1,17 @@
 # /Agents/Agent.py
 
 import json
+import time
 import openai
 from openai.types.beta.assistant import Assistant
+from Utilities.Log import Log, colors
 from Utilities.Config import current_model
+from Tools.Plan import Plan
+from Tools.Delegate import Delegate
+from Tools.ReadFile import ReadFile
+from Tools.ExecutePyFile import ExecutePyFile
+from Tools.CreateFile import CreateFile
+from Tools.MoveFile import MoveFile
 
 class Agent:
     def __init__(self, client:openai, assistant: Assistant, thread_id=None):
@@ -18,7 +26,12 @@ class Agent:
         self.instructions = assistant.instructions
         self.services = assistant.metadata["services"]
         self.thread = thread_id
+        self.waiting_on_response = False
+        self.task_delegated = False
         self.tools = []
+        self.shared_tools = [ReadFile,CreateFile,MoveFile,ExecutePyFile]
+        self.internal_tools = [Plan,Delegate]
+        self.setup_tools()
 
     @property
     def thread(self):
@@ -36,39 +49,60 @@ class Agent:
                         break
                     
         return self._thread
+    
+    def add_tool(self, tool):
+        self.tools.append(tool)
 
-    def get_completion(message, useTools=True):
+    def setup_tools(self):
+
+        for tool in self.shared_tools:
+            self.add_tool(tool)
+
+        # if self.name == UserAgent.name:
+        #    self.tools.append(CustomTool)
+
+
+    def add_message(self, message):
+
+        self.waiting_on_response = False
+
+        # todo: support seed
+        # appears to currently not be supported: https://github.com/openai/openai-python/blob/790df765d41f27b9a6b88ce7b8af713939f8dc22/src/openai/resources/beta/threads/messages/messages.py#L39
+        # reported issue: https://community.openai.com/t/seed-param-and-reproducible-output-do-not-work/487245
+
+        return self.client.beta.threads.messages.create(
+            thread_id=self.thread.id, 
+            role="user", 
+            content=message,
+        )
+
+    def get_completion(self, message=None, useTools=True):
 
         client = self.client
 
         thread = self.thread
 
+        self.waiting_on_response = False
+
         if not thread:
             # throw error
             raise Exception(f"Thread for agent {self.name} not found.")
 
-        if not useTools:
-            completion = client.chat.completions.create(
-                model=current_model,
-                messages=[
-                    {"role": "system", "content": self.instructions},
-                    {"role": "user", "content": message},
-                ],
-            )
-            response = completion.choices[0].message.content
-
-            return response
-
-        # create new message in the thread
-        message = client.beta.threads.messages.create(
-            thread_id=thread.id, role="user", content=message
-        )
+        if message is not None:
+            message = self.add_message(message=message)
 
         # run this thread
-        run = client.beta.threads.runs.create(
-            thread_id=thread.id,
-            assistant_id=self.id,
-        )
+        if useTools:
+            run = client.beta.threads.runs.create(
+                thread_id=thread.id,
+                assistant_id=self.id,
+            )
+        else:
+            run = client.beta.threads.runs.create(
+                thread_id=thread.id,
+                assistant_id=self.id,
+                tools=[] # forces assistant to respond with prompt
+            )
 
         while True:
             # wait until run completes
@@ -132,5 +166,10 @@ class Agent:
             else:
                 completion = client.beta.threads.messages.list(thread_id=thread.id)
                 response = completion.data[0].content[0].text.value
+
+                if self.task_delegated:
+                    self.waiting_on_response = False
+                else:
+                    self.waiting_on_response = True
 
                 return response

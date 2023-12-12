@@ -4,7 +4,7 @@ import textwrap
 
 class colors:
     HEADER = "\033[95m"
-    BLUE = "\033[94m"
+    DEBUG = "\033[94m"
     COMMUNICATION = "\033[96m"
     RESULT = "\033[92m"
     ACTION = "\033[93m"
@@ -12,6 +12,13 @@ class colors:
     ENDC = "\033[0m"
     BOLD = "\033[1m"
     UNDERLINE = "\033[4m"
+
+debugging_enabled = True
+
+def Debug(*args, **kwargs):
+    if debugging_enabled:
+        Log(colors.DEBUG, *args, **kwargs)
+
 
 def Log(color, *args, width=None, **kwargs):
     """

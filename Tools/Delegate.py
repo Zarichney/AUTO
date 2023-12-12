@@ -4,10 +4,10 @@ from instructor import OpenAISchema
 from pydantic import Field
 from Agents.Agent import Agent
 from Agents.Agency import Agency
-from Utilities.Log import Log, colors
+from Utilities.Log import Log, Debug, colors
 
 class Delegate(OpenAISchema):
-    """Request assistant from another specialized agent"""
+    """Hand off the current action item to another specialized agent"""
 
     caller_name: str = Field(
         ..., description="The name of the assistant that invoked this tool"
@@ -15,6 +15,10 @@ class Delegate(OpenAISchema):
     recipient_name: str = Field(
         ...,
         description="The agent's name which is being requested for assistance",
+    )
+    artifact: str = Field(
+        default=None,
+        description="The artifact to be passed to the recipient agent. This could be a file, a message, or a tool output."
     )
     instruction: str = Field(
         ...,
@@ -34,13 +38,18 @@ class Delegate(OpenAISchema):
         prompt = "Could you help with the following instructions:\n"
         prompt += self.instruction
 
+        if self.artifact is not None:
+            prompt += f"\n\nThe artifact we are working on is:\n"
+            prompt += f"{self.artifact}\n\n"
+
+        Debug(f"{self.current_agent.name} is delegating to {self.recipient.name}: {prompt}")
+        
         Log(colors.COMMUNICATION, f"Prompting {recipient.name}:", self.instruction)
 
-        # todo make this async so that the current agent can close the run while the recipient agent starts a new run
-        response = recipient.get_completion(message=prompt)
+        recipient.add_message(message=prompt)
 
-        Log(colors.RESULT, f"{recipient.name} response:", response)
+        agency.active_agent = recipient
 
-        response += "\n\nWhat is next in the plan?\n"
+        current_agent.task_delegated = True
 
-        return response
+        return "Delegation complete. The recipient will complete the task. No need to reply."
