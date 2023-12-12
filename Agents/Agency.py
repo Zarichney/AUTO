@@ -107,16 +107,18 @@ class Agency:
             
         return None
 
-    def internal_tool_delegate(self, caller_name, recipient_name, artifact, instruction):
+    def internal_tool_delegate(self, recipient_name, artifact, instruction):
         return Delegate(
-            caller_name=caller_name, 
             recipient_name=recipient_name, 
             artifact=artifact,
             instruction=instruction
             ).run(agency=self.agency)
 
-    def internal_tool_plan(self, caller_name, mission):
-        return Plan(caller_name=caller_name, mission=mission).run(agency=self.agency)
+    def internal_tool_plan(self, mission, team_planning):
+        return Plan(
+            mission=mission,
+            team_planning = team_planning,
+            ).run(agency=self.agency)
     
     def create_agents(self):
         

@@ -9,9 +9,6 @@ from Utilities.Log import Log, Debug, colors
 class Delegate(OpenAISchema):
     """Hand off the current action item to another specialized agent"""
 
-    caller_name: str = Field(
-        ..., description="The name of the assistant that invoked this tool"
-    )
     recipient_name: str = Field(
         ...,
         description="The agent's name which is being requested for assistance",
@@ -28,14 +25,14 @@ class Delegate(OpenAISchema):
     def run(self, agency: Agency):
         # find agent by name in agency
         recipient: Agent = agency.get_agent(self.recipient_name)
-        current_agent: Agent = agency.get_agent(self.caller_name)
+        current_agent: Agent = agency.active_agent
 
-        # prompt = f"Our agency's mission:\n"
-        # prompt += f"{agency['prompt']}\n\n"
-        # prompt += f"Our leader has determined the plan:\n"
-        # prompt += f"{agency['plan']}\n\n"
-        # prompt += f"I, {current_agent.name}, am seeking assistance from you {recipient.name}.\n"
-        prompt = "Could you help with the following instructions:\n"
+        prompt = f"Agency's mission:\n"
+        prompt += f"{agency.prompt}\n\n"
+        prompt += f"The user has approved of the following plan:\n"
+        prompt += f"{agency.plan}\n\n"
+        prompt += f"I, {current_agent.name}, am seeking assistance from you {recipient.name}.\n"
+        prompt = "Could you help with the following instruction please:\n"
         prompt += self.instruction
 
         if self.artifact is not None:
