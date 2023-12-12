@@ -2,9 +2,12 @@
 
 from instructor import OpenAISchema
 from pydantic import Field
-from Agents.Agent import Agent
-from Agents.Agency import Agency
 from Utilities.Log import Log, Debug, colors
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from Agents.Agent import Agent
+    from Agents.Agency import Agency
 
 class Delegate(OpenAISchema):
     """
@@ -15,19 +18,19 @@ class Delegate(OpenAISchema):
         ...,
         description="The agent's name which is being requested for assistance",
     )
-    artifact: str = Field(
-        default=None,
-        description="The artifact to be passed to the recipient agent. This could be a file, a message, or a tool output."
-    )
     instruction: str = Field(
         ...,
         description="Specify the task required for the recipient agent to complete. Recall the agency's plan and speak to the assistant in terms of the action items you want them to complete.",
     )
+    artifact: str = Field(
+        default="",
+        description="The artifact to be passed to the recipient agent. This could be a file, a message, or a tool output."
+    )
 
-    def run(self, agency: Agency):
+    def run(self, agency: 'Agency'):
         
-        recipient: Agent = agency.get_agent(self.recipient_name)
-        current_agent: Agent = agency.active_agent
+        recipient: 'Agent' = agency.get_agent(self.recipient_name)
+        current_agent: 'Agent' = agency.active_agent
 
         prompt = f"Agency's mission:\n"
         prompt += f"{agency.prompt}\n\n"
@@ -37,11 +40,11 @@ class Delegate(OpenAISchema):
         prompt = "Could you help with the following instruction please:\n"
         prompt += self.instruction
 
-        if self.artifact is not None:
+        if self.artifact != "":
             prompt += f"\n\nThe artifact we are working on is:\n"
             prompt += f"{self.artifact}\n\n"
 
-        Debug(f"{self.current_agent.name} is delegating to {self.recipient.name}: {prompt}")
+        Debug(f"{current_agent.name} is delegating to {recipient.name}: {prompt}")
         
         Log(colors.COMMUNICATION, f"Prompting {recipient.name}:", self.instruction)
 

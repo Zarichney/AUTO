@@ -33,24 +33,28 @@ class DownloadFile(OpenAISchema):
             self.filename = self.url.split("/")[-1]
 
         # If file already exists, return message
-        if os.path.exists(self.working_dir + self.file_name):
+        if os.path.exists(self.working_dir + self.filename):
             if self.overwrite:
-                Log(colors.ACTION, f"Overwriting file: {self.working_dir + self.file_name}")
+                Log(colors.ACTION, f"Overwriting file: {self.working_dir + self.filename}")
             else:
-                result = f"File {self.working_dir + self.file_name} already exists.\n"
+                result = f"File {self.working_dir + self.filename} already exists.\n"
                 result += "Specify to overwrite if you this is intended, or\n"
                 result += "increment the file version for a unique file name"
                 Log(colors.ERROR, result)
                 return result
             
         try:
-            with request.get(self.url, stream=True) as r:
+            with requests.get(self.url, stream=True) as r:
                 r.raise_for_status()
-                with open(self.working_dir + self.file_name, 'wb') as f:
+                with open(self.working_dir + self.filename, 'wb') as f:
                     for chunk in r.iter_content(chunk_size=8192): 
                         f.write(chunk)
         except requests.exceptions.RequestException as e:
-            print(f"Error downloading file: {e}")
-
-        Log(colors.ACTION, f"{self.url} has been downloaded to '{self.filename}'")
+            result = f"Error downloading file: {e}"
+            Log(colors.ERROR, result)
+            return result
+        
+        result = f"{self.url} has been downloaded to '{self.working_dir + self.filename}'"
+        Log(colors.ACTION, result)
+        return result
 

@@ -4,6 +4,7 @@ import json
 import time
 import openai
 from openai.types.beta.assistant import Assistant
+from openai.types.beta.thread import Thread
 from Utilities.Log import Log, colors
 from Utilities.Config import current_model
 from Tools.Plan import Plan
@@ -16,7 +17,7 @@ from Tools.DownloadFile import DownloadFile
 from Tools.MoveFile import MoveFile
 
 class Agent:
-    def __init__(self, client:openai, assistant: Assistant, thread_id=None):
+    def __init__(self, client:openai, assistant:Assistant, thread:Thread=None):
         self.client = client
         if not client:
             # throw error
@@ -26,8 +27,9 @@ class Agent:
         self.name = assistant.name
         self.description = assistant.description
         self.instructions = assistant.instructions
-        self.services = assistant.metadata["services"]
-        self.thread = thread_id
+        self.services = getattr(assistant, 'metadata', {}).get("services", [])
+        self.thread = thread
+        self.thread_id = thread.id if thread is not None else None
         self.waiting_on_response = False
         self.task_delegated = False
         self.tools = []
@@ -40,6 +42,7 @@ class Agent:
     def thread(self):
         if self._thread is None:
             self._thread = self.client.beta.threads.create()
+            self.thread_id = self._thread.id
             
             # Update session.json
             # Find current agent config in array of 'agents'
@@ -52,6 +55,10 @@ class Agent:
                         break
                     
         return self._thread
+
+    @thread.setter
+    def thread(self, value):
+        self._thread = value
     
     def add_tool(self, tool):
         self.tools.append(tool)
@@ -140,16 +147,22 @@ class Agent:
                         (
                             func
                             for func in self.tools
-                            if func.__name__.startswith("internal_tool_")
-                            or func.__name__ == tool_call.function.name.lower()
+                            if func.__name__.replace("internal_tool_", "").lower() == tool_call.function.name.lower()
                         ),
                         None,
                     )
 
                     # try:
                     self.running_tool = True
+                    
                     # init tool
-                    tool = func(**eval(tool_call.function.arguments))
+                    if func is None:
+                        tool_names = [func.__name__ for func in self.tools]
+                        raise ValueError(f"No tool found with name {tool_call.function.name}. Available tools: {', '.join(tool_names)}")
+                    else:
+                        arguments = tool_call.function.arguments.replace('true', 'True').replace('false', 'False')
+                        tool = func(**eval(arguments))
+                        
                     # get outputs from the tool
                     if isinstance(tool, str):
                         output = tool

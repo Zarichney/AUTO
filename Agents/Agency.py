@@ -14,7 +14,7 @@ from Tools.CreateFile import CreateFile
 from Tools.DownloadFile import DownloadFile
 from Tools.MoveFile import MoveFile
 from Tools.ExecutePyFile import ExecutePyFile
-from Utilities.Config import GetClient, current_model, session_file
+from Utilities.Config import GetClient, current_model, session_file_name
 from Utilities.Log import Log, Debug, colors
 
 class Agency:
@@ -23,18 +23,18 @@ class Agency:
         self.agents = []
         self.plan = None
         self.prompt = None
-        self.active_agent = self.get_agent(UserAgent.name)
+        self.active_agent = None
 
         self.setup(new_session)
-
+        
     def setup(self, new_session: bool = False):
         # if session_file does not exist, create file and force update new_session to True
-        if not os.path.exists(session_file):
+        if not os.path.exists(session_file_name):
             new_session = True
-            with open(session_file, "w") as session_file:
+            with open(session_file_name, "w") as session_file:
                 session_file.write(json.dumps({"agents": []}) + "\n")
         
-        with open(session_file, "r") as session_file:
+        with open(session_file_name, "r") as session_file:
             session = json.load(session_file)
 
         if new_session:
@@ -52,7 +52,7 @@ class Agency:
                     self.client,
                     self.client.beta.assistants.retrieve(agent_dict["id"]),
                     thread
-                ))
+                ),internalTools=[self.internal_tool_delegate, self.internal_tool_plan, self.internal_tool_inquire])
 
     def add_assistant(self, assistant: Assistant, internalTools=None):
         self.agents.append(Agent(self.client, assistant))
@@ -108,32 +108,36 @@ class Agency:
             return
             
         return None
+    
+    def UpdatePlan(self,plan):
+        # todo
+        self.plan = plan
 
     def broadcast(self, message):
         for agent in self.agents:
             if agent != self.active_agent:
                 agent.add_message(message=message)
 
-    def internal_tool_delegate(self, recipient_name, artifact, instruction):
+    def internal_tool_delegate(self, recipient_name, instruction, artifact=""):
         return Delegate(
             recipient_name=recipient_name, 
-            artifact=artifact,
-            instruction=instruction
-            ).run(agency=self.agency)
+            instruction=instruction,
+            artifact=artifact
+            ).run(agency=self)
 
-    def internal_tool_plan(self, mission, team_planning):
+    def internal_tool_plan(self, mission, team_planning=False):
         return Plan(
             mission=mission,
-            team_planning = team_planning,
-            ).run(agency=self.agency)
+            team_planning=team_planning,
+            ).run(agency=self)
 
     def internal_tool_inquire(self, recipient_name, prompt, chain_of_thought, useTools):
         return Inquire(
             recipient_name=recipient_name,
-            prompt = prompt,
-            chain_of_thought = chain_of_thought,
-            useTools = useTools,
-            ).run(agency=self.agency)
+            prompt=prompt,
+            chain_of_thought=chain_of_thought,
+            useTools=useTools,
+            ).run(agency=self)
     
     def create_agents(self):
         
@@ -212,7 +216,7 @@ class Agency:
         ), internalTools=[self.internal_tool_delegate, self.internal_tool_plan, self.internal_tool_inquire])
         
         # Store the list of assistant ids to ./session.json
-        with open(session_file, "w") as session_file:
+        with open(session_file_name, "w") as session_file:
             agent_data = []
             for agent in self.agents:
                 agent_data.append({

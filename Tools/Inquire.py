@@ -2,9 +2,12 @@
 
 from instructor import OpenAISchema
 from pydantic import Field
-from Agents.Agent import Agent
-from Agents.Agency import Agency
 from Utilities.Log import Log, Debug, colors
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from Agents.Agent import Agent
+    from Agents.Agency import Agency
 
 class Inquire(OpenAISchema):
     """
@@ -28,10 +31,10 @@ class Inquire(OpenAISchema):
         description="Whether or not you allow the recipient to have access to their tools in order to complete the inquiry. Typically left as default false because this inquiry tool is meant for their own knowledge, however there can be the case where the recipient would require tool access to properly respond to the inquiry."
     )
 
-    def run(self, agency: Agency):
+    def run(self, agency: 'Agency'):
 
-        recipient: Agent = agency.get_agent(self.recipient_name)
-        current_agent: Agent = agency.active_agent
+        recipient: 'Agent' = agency.get_agent(self.recipient_name)
+        current_agent: 'Agent' = agency.active_agent
 
         prompt = f"{recipient.name}, it is I, {current_agent.name}.\n"
         prompt += "I have an inquiry for you:\n\n"
