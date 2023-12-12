@@ -21,7 +21,7 @@ class Agency:
         self.agents = []
         self.plan = None
         self.prompt = None
-        self.active_agent: Agent = None
+        self.active_agent = self.get_agent(UserAgent.name)
 
         self.setup(new_session)
 
@@ -106,6 +106,11 @@ class Agency:
             return
             
         return None
+
+    def broadcast(self, message):
+        for agent in self.agents:
+            if agent != self.active_agent:
+                agent.add_message(message=message)
 
     def internal_tool_delegate(self, recipient_name, artifact, instruction):
         return Delegate(
@@ -205,7 +210,6 @@ class Agency:
             prompt = "Execute the plan accordingly.\n"
             prompt += "If you are not the agent in step 1, then use your tool 'Delegate' on the first agent in the plan.\n"
             prompt += "Providing them with their mission\n"
-            self.active_agent = self.get_agent(UserAgent.name)
             Log(colors.ACTION, f"\nExecuting Plan...\n\n")
         else:
             prompt = user_prompt
