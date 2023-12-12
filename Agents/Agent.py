@@ -31,6 +31,7 @@ class Agent:
         self.tools = []
         self.shared_tools = [ReadFile,CreateFile,MoveFile,ExecutePyFile]
         self.internal_tools = [Plan,Delegate]
+        self.running_tool = False
         self.setup_tools()
 
     @property
@@ -82,6 +83,19 @@ class Agent:
 
         thread = self.thread
 
+        if self.running_tool:
+            completion = client.chat.completions.create(
+            model=current_model,
+            messages=[
+                {"role": "system", "content": self.instructions},
+                {"role": "user", "content": message}
+            ]
+            )
+            response = completion.choices[0].message.content
+
+            return response
+
+
         self.waiting_on_response = False
 
         if not thread:
@@ -131,6 +145,7 @@ class Agent:
                     )
 
                     # try:
+                    self.running_tool = True
                     # init tool
                     tool = func(**eval(tool_call.function.arguments))
                     # get outputs from the tool
@@ -138,6 +153,8 @@ class Agent:
                         output = tool
                     else:
                         output = tool.run()
+
+                    self.running_tool = False
 
                     Log(
                         colors.ACTION,
