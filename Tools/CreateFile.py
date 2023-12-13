@@ -24,7 +24,7 @@ class CreateFile(OpenAISchema):
         ...,
         description="The actual contents contents of a file"
     )
-    overwrite: str = Field(
+    overwrite: bool = Field(
         default=False,
         description="If true, will overwrite the file if it already exists."
     )

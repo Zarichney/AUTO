@@ -43,8 +43,6 @@ class Delegate(OpenAISchema):
         if self.artifact != "":
             prompt += f"\n\nThe artifact we are working on is:\n"
             prompt += f"{self.artifact}\n\n"
-
-        Debug(f"{current_agent.name} is delegating to {recipient.name}: {prompt}")
         
         Log(colors.COMMUNICATION, f"Prompting {recipient.name}:", self.instruction)
 
@@ -53,5 +51,7 @@ class Delegate(OpenAISchema):
         agency.active_agent = recipient
 
         current_agent.task_delegated = True
+
+        Debug(f"{current_agent.name} is delegating to {recipient.name}: {prompt}")
 
         return "Delegation complete. The recipient will complete the task. No need to reply."

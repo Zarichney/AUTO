@@ -23,7 +23,7 @@ class Agency:
         self.agents = []
         self.plan = None
         self.prompt = None
-        self.active_agent = None
+        self.active_agent:Agent = None
 
         self.setup(new_session)
         
@@ -60,7 +60,44 @@ class Agency:
             for tool in internalTools:
                 self.agents[-1].add_tool(tool)
 
-    def get_agent(self, name):
+    def get_agent(self, name) -> Agent:
+        for agent in self.agents:
+            if agent.name == name:
+                return agent
+
+        # An invalid name was supplied, use GPT to find the correct agent name
+        
+        list_of_agent_names = [agent.name for agent in self.agents]
+
+        message = (
+            "List of agents: "
+            + ", ".join(list_of_agent_names)
+            + "\n\nWhat is the actual agent name for: "
+            + name
+            + "\nTell me the agent name and nothing else."
+        )
+        
+        Log(colors.ERROR, f"Agent {name} not found in agency. Engaging fall back:\n\n{message}")
+
+        # todo use the json output for better reliability
+        completion = self.client.chat.completions.create(
+            model="gpt-4-1106-preview",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Solve this small problem. The prompt will be provide you a list of agent names and a mismatched name. The goal is to select the closest resembling agent name based off the one provide.You must answer with only the correct agent name and nothing else.",
+                },
+                {
+                    "role": "user",
+                    "content": message,
+                },
+            ],
+        )
+        response = completion.choices[0].message.content
+        
+        actualAgentName = response
+
+        Log(colors.ERROR, f"Agent name fallback determined: {actualAgentName}")
         for agent in self.agents:
             if agent.name == name:
                 return agent
@@ -131,7 +168,7 @@ class Agency:
             team_planning=team_planning,
             ).run(agency=self)
 
-    def internal_tool_inquire(self, recipient_name, prompt, chain_of_thought, useTools):
+    def internal_tool_inquire(self, recipient_name, prompt, chain_of_thought="", useTools=False):
         return Inquire(
             recipient_name=recipient_name,
             prompt=prompt,
@@ -225,12 +262,25 @@ class Agency:
                 })
             session_file.write(json.dumps({"agents": agent_data}) + "\n")
 
-    def operate(self, prompt = None):
+    def operate(self):
+        
+        # Trigger the initial delegation
+        self.active_agent.get_completion()
 
-        response = self.active_agent.get_completion(message=prompt)
-        
         while self.active_agent.waiting_on_response == False:
+            
             response = self.active_agent.get_completion()
-            Debug(f"{self.active_agent.name}: {response}")
+            
+            if self.task_delegated != False and self.active_agent.name != UserAgent.name:
+                # Get user agent to handle the response
+                user_agent = self.get_agent(UserAgent.name)
+                self.active_agent.waiting_on_response = False
+                self.active_agent = user_agent
+                prompt = f"{response}\n\n In regards to the overall plan. What do we do now leader?"
+                user_agent_response = user_agent.get_completion(message=prompt)
+                # The user agent response shouldnt matter as its the instruction to say it finished delegating
+                # But now a message has been dropped on the thread of the new delegate
+                # And the loop will restart, causing the delegate to react to the user agent's command to continue the mission
         
+        Debug(f"{self.active_agent.name} has provided a response: {response}")
         return response

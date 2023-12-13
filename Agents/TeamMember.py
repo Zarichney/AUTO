@@ -13,7 +13,8 @@ You are to understand the services offered by others and to use your tool 'Deleg
 tool_instruction = """
 # Shared Toolkit
 The agency has a variety of tools at the disposal of all agents.
-They are to be considered during planning and tool usage is expected to be the method of conducting operational task(s).
+They are to be considered during planning and tool usage is expected to be the method of conducting operational task(s). 
+Always use your tools and only provide a response once you are no longer able to use a tool to complete your series of tasks. The 'Delegate' should always be your last tool to use.
 Tool are designed to be used by anyone, however consider whether a tool is relevant for a given missing. Ignore the ones that are not clear given your role.
 """
 

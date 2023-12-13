@@ -3,3 +3,5 @@ env/
 __pycache__/
 session.json
 ai-working-dir/
+.*  # Ignore files and directories starting with a dot
+.google-cookie

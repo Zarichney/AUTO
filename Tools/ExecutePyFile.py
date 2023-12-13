@@ -5,7 +5,7 @@ import subprocess
 import sys
 from instructor import OpenAISchema
 from pydantic import Field
-from Utilities.Log import Log, colors
+from Utilities.Log import Debug, Log, colors
 import pkg_resources
 
 class ExecutePyFile(OpenAISchema):
@@ -16,22 +16,28 @@ class ExecutePyFile(OpenAISchema):
     Additional packages can be installed by specifying them in the required_packages field.
     """
 
-    file_name: str = Field(..., description="The path to the .py file to be executed.")
-
-    required_packages: str = Field(
-        default="",                           
-        description="Required packages to be installed. List of comma delimited strings. Will execute ''pip install <package>'' for each package supplied")
-    
+    file_name: str = Field(
+        ..., 
+        description="The path to the .py file to be executed."
+    )
     directory: str = Field(
         default="./ai-working-dir/",
         description="The path to the directory where to file is stored. Path can be absolute or relative."
     )
+    parameters: str = Field(
+        default="",                           
+        description="Comma separated list of parameters to be passed to the script call."
+    )
+    required_packages: str = Field(
+        default="",                           
+        description="Required packages to be installed. List of comma delimited strings. Will execute ''pip install <package>'' for each package supplied"
+    )
 
-    def check_dependencies(self, required_packages):
+    def check_dependencies(self, python_path, required_packages):
         """Check if the required modules are installed."""
 
         packages = required_packages.split(',')
-
+        
         for package in packages:
             try:
                 dist = pkg_resources.get_distribution(package)
@@ -39,7 +45,7 @@ class ExecutePyFile(OpenAISchema):
             except pkg_resources.DistributionNotFound:
                 Log(colors.ACTION,f"The {package} module is not installed. Attempting to install...")
                 try:
-                    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+                    subprocess.check_call([python_path, "-m", "pip", "install", package])
                     Log(colors.ACTION,f"Successfully installed {package}.")
                     
                 except subprocess.CalledProcessError as e:
@@ -51,10 +57,14 @@ class ExecutePyFile(OpenAISchema):
 
     def run(self):
         """Executes a Python script at the given file path and captures its output and errors."""
-        
+            
+        # Get the path of the current Python interpreter
+        python_path = sys.executable
+    
         # Check if the required modules are installed
         if self.required_packages:
-            check_result = self.check_dependencies(self.required_packages)
+            Debug(f"Agent called self.required_packages: {self.required_packages}")
+            check_result = self.check_dependencies(python_path, self.required_packages)
             if check_result != "All required modules are installed.":
                 return check_result
         
@@ -64,15 +74,37 @@ class ExecutePyFile(OpenAISchema):
         
         try:
             Log(colors.ACTION, f"Executing {self.file_name}...")
-        
-            execution = subprocess.run(
-                ["python", self.directory + self.file_name], text=True, capture_output=True, check=True
-            )
+            Debug(f"Agent called subprocess.run with:\n{[python_path, self.directory + self.file_name] + self.parameters.split(',')}")
             
-            result = f"Execution results: {execution.stdout}"
-            Log(colors.RESULT, result)
-            return result
-        
+            try:
+                execution = subprocess.run(
+                    [python_path, self.directory + self.file_name] + self.parameters.split(','),
+                    text=True,
+                    capture_output=True,
+                    check=True,
+                    timeout=10
+                )
+                
+                Debug(f"Agent execution cwd: {execution.cwd}")
+                Debug(f"Agent execution args: {execution.args}")
+                Debug(f"Agent execution results: {execution.stdout}")
+                Debug(f"Agent execution errors: {execution.stderr}")
+                Debug(f"Agent execution return code: {execution.returncode}")
+                
+                result = f"Execution results: {execution.stdout}"
+                Log(colors.RESULT, result)
+                return result
+
+            except subprocess.TimeoutExpired:
+                result = "Execution timed out. The script may have been waiting with a prompt."
+                Log(colors.ERROR, result)
+                return result
+
+            except subprocess.CalledProcessError as e:
+                result = f"Execution error occurred: {e.stderr}"
+                Log(colors.ERROR, result)
+                return result
+            
         except subprocess.CalledProcessError as e:
             
             result = f"Execution error occurred: {e.stderr}"

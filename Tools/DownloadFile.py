@@ -22,7 +22,7 @@ class DownloadFile(OpenAISchema):
         default=None,
         description="Specify a custom name to save the downloaded file as",
     )
-    overwrite: str = Field(
+    overwrite: bool = Field(
         default=False,
         description="If true, will overwrite the file if it already exists."
     )

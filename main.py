@@ -43,6 +43,7 @@ while user_message.lower() != "approve":
 prompt = "The user has approved the plan.\n"
 prompt += "In order to broadcast the plan to the agency, please respond with the user approved plan and nothing else.\n"
 
+# todo, fix this: this cant be the plan as it rarely adheres to the tool output <- this is what we want to capture, store and broadcast
 agency.plan = user_agent.get_completion(message=prompt)
 
 # todo
@@ -51,20 +52,23 @@ agency.plan = user_agent.get_completion(message=prompt)
 prompt = "Execute the plan accordingly.\n"
 prompt += "If you are not the agent in step 1, then use your tool 'Delegate' on the first agent in the plan.\n"
 prompt += "Providing them with their mission\n"
+user_agent.add_message(message=prompt)
 Log(colors.ACTION, f"\nExecuting Plan...\n\n")
 
 # Continue interacting with user agent until the plan is complete
 while True:
 
     # This initiates all agents to co-operate the mission
-    response = agency.operate(prompt=prompt)
+    response = agency.operate()
 
     # The agency has done their work and require user feedback
 
-    Log(colors.RESULT, f"\nAUTO:\n{response}\n")
+    Log(colors.RESULT, f"\{agency.active_agent.name}:\n{response}\n")
 
     prompt = input("Waiting for reply from user. Type 'exit' to terminate\n\n> ")
 
     if prompt.lower() == "exit":
         Log(colors.ACTION, "Exiting...")
         break
+
+    Log(colors.ACTION, f"\n\nProcessing...\n")

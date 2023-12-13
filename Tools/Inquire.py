@@ -23,7 +23,7 @@ class Inquire(OpenAISchema):
         description="The inquiry to send to the recipient agent",
     )
     chain_of_thought: str = Field(
-        default=None,
+        default="",
         description="Your own chain of thought. Maybe be useful for the recipient to understand your thought process."
     )
     useTools: bool = Field(
@@ -40,7 +40,7 @@ class Inquire(OpenAISchema):
         prompt += "I have an inquiry for you:\n\n"
         prompt += f"{self.prompt}\n"
         
-        if (self.chain_of_thought is not None):
+        if self.chain_of_thought != "":
             prompt += f"\n\nMy chain of thought is:\n"
             prompt += f"{self.chain_of_thought}\n"
 

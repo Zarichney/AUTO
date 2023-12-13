@@ -99,7 +99,7 @@ class Plan(OpenAISchema):
         else:
             prompt += "YOUR CAPABILITIES"
         prompt += " WITH THE LEAST AMOUNT OF ACTIONABLE STEPS NECESSARY**\n\n"
-        prompt += "Think step by step. Good luck, you are great a this!\n"
+        prompt += "Think step by step. Good luck, you are great at this!\n"
             
         Log(colors.ACTION, f"{current_agent.name} is planning...")
 
