@@ -56,11 +56,17 @@ class Plan(OpenAISchema):
             toolkit = current_agent.tools
         
         prompt += "# Available Tools: \n"
-        for tool in toolkit:
-            schema = tool.openai_schema
-            prompt += "## " + schema['name'] + "\n"
-            prompt += schema['description'] + "\n\n"
-        prompt += "\n"
+        try:
+            for tool in toolkit:
+                schema = tool.openai_schema
+                prompt += "## " + schema['name'] + "\n"
+                prompt += schema['description'] + "\n\n"
+            prompt += "\n"
+        except Exception as e:
+            Log(colors.ERROR, f"Error in Plan.py: {e}")
+            Log(colors.ERROR, f"Toolkit: {toolkit}")
+            Log(colors.ERROR, f"master_plan_creation: {master_plan_creation}")
+            Log(colors.ERROR, f"self.team_planning: {self.team_planning}")
     
         # Instruction to review inputs and make a plan
         prompt += "# Plan Structure\n\n"
@@ -101,13 +107,14 @@ class Plan(OpenAISchema):
         prompt += " WITH THE LEAST AMOUNT OF ACTIONABLE STEPS NECESSARY**\n\n"
         prompt += "Think step by step. Good luck, you are great at this!\n"
             
-        Log(colors.ACTION, f"{current_agent.name} is planning...")
-
-        Debug("Plan Prompt:\n" + prompt + "\n")
-
+        Debug(f"Plan Prompt for {current_agent.name}:\n{prompt}")
+        
+        if master_plan_creation:
+            Log(colors.ACTION, f"Agency is generating a plan\n")
+        
         plan = current_agent.get_completion(message=prompt, useTools=False)
 
-        Log(colors.COMMUNICATION, f"\nPlan Generated:\n{plan}\n")
+        Log(colors.RESULT, f"\nPlan Generated:\n{plan}\n")
         
         return plan
         

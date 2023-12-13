@@ -77,7 +77,7 @@ class Agency:
             + "\nTell me the agent name and nothing else."
         )
         
-        Log(colors.ERROR, f"Agent {name} not found in agency. Engaging fall back:\n\n{message}")
+        Log(colors.ERROR, f"Agent {name} not found in agency. Engaging fall back:\n{message}")
 
         # todo use the json output for better reliability
         completion = self.client.chat.completions.create(
@@ -98,44 +98,6 @@ class Agency:
         actualAgentName = response
 
         Log(colors.ERROR, f"Agent name fallback determined: {actualAgentName}")
-        for agent in self.agents:
-            if agent.name == name:
-                return agent
-
-        # An invalid name was supplied, use GPT to find the correct agent name
-        
-        list_of_agent_names = [agent.name for agent in self.agents]
-
-        message = (
-            "List of agents: "
-            + ", ".join(list_of_agent_names)
-            + "\n\nWhat is the actual agent name for: "
-            + name
-            + "\nTell me the agent name and nothing else."
-        )
-        
-        Log(colors.ERROR, f"Agent {name} not found in agency. Engaging fall back:\n\n{message}")
-
-        # todo use the json output for better reliability
-        completion = self.client.chat.completions.create(
-            model="gpt-4-1106-preview",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "Solve this small problem. The prompt will be provide you a list of agent names and a mismatched name. The goal is to select the closest resembling agent name based off the one provide.You must answer with only the correct agent name and nothing else.",
-                },
-                {
-                    "role": "user",
-                    "content": message,
-                },
-            ],
-        )
-        response = completion.choices[0].message.content
-        
-        actualAgentName = response
-
-        Log(colors.ERROR, f"Agent name fallback determined: {actualAgentName}")
-
         for agent in self.agents:
             if agent.name == actualAgentName:
                 return agent
@@ -168,12 +130,11 @@ class Agency:
             team_planning=team_planning,
             ).run(agency=self)
 
-    def internal_tool_inquire(self, recipient_name, prompt, chain_of_thought="", useTools=False):
+    def internal_tool_inquire(self, recipient_name, prompt, chain_of_thought=""):
         return Inquire(
             recipient_name=recipient_name,
             prompt=prompt,
             chain_of_thought=chain_of_thought,
-            useTools=useTools,
             ).run(agency=self)
     
     def create_agents(self):
@@ -269,18 +230,42 @@ class Agency:
 
         while self.active_agent.waiting_on_response == False:
             
-            response = self.active_agent.get_completion()
+            Debug(f"active_agent.name: {self.active_agent.name}")
+            Debug(f"active_agent.waiting_on_response: {self.active_agent.waiting_on_response}")
+            Debug(f"active_agent.task_delegated: {self.active_agent.task_delegated}")
             
-            if self.task_delegated != False and self.active_agent.name != UserAgent.name:
+            active_agent_name = self.active_agent.name
+            
+            Debug("before get_completion()")
+            response = self.active_agent.get_completion()
+            Debug(f"after get_completion()\n{response}")
+            
+            previous_agent = self.get_agent(active_agent_name)
+            Debug(f"previous_agent.name: {previous_agent.name}")
+            Debug(f"previous_agent.waiting_on_response: {previous_agent.waiting_on_response}")
+            Debug(f"previous_agent.task_delegated: {previous_agent.task_delegated}")
+            
+            Debug(f"active_agent.name: {self.active_agent.name}")
+            Debug(f"active_agent.waiting_on_response: {self.active_agent.waiting_on_response}")
+            Debug(f"active_agent.task_delegated: {self.active_agent.task_delegated}")
+            
+            if previous_agent.task_delegated == True and self.active_agent.name != previous_agent.name:
+                # Turn this flag off now that it's been delegated
+                previous_agent.task_delegated == False
+            
+            elif previous_agent.task_delegated == False and active_agent_name != UserAgent.name:
+                Debug(f"{active_agent_name} has provided a response:\n{response}")
                 # Get user agent to handle the response
                 user_agent = self.get_agent(UserAgent.name)
                 self.active_agent.waiting_on_response = False
                 self.active_agent = user_agent
                 prompt = f"{response}\n\n In regards to the overall plan. What do we do now leader?"
                 user_agent_response = user_agent.get_completion(message=prompt)
+                Debug(f"User agent is expected to have delegated.\nThis was its response: {user_agent_response}")
+                Debug(f"The new active agent is: {self.active_agent.name}")
                 # The user agent response shouldnt matter as its the instruction to say it finished delegating
                 # But now a message has been dropped on the thread of the new delegate
                 # And the loop will restart, causing the delegate to react to the user agent's command to continue the mission
         
-        Debug(f"{self.active_agent.name} has provided a response: {response}")
+        Debug(f"{self.active_agent.name} is returning back to the user with: {response}")
         return response

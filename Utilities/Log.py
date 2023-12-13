@@ -36,7 +36,7 @@ def Log(color, *args, width=None, **kwargs):
         wrapped_args = [wrapper.fill(str(arg)) for arg in args]
 
         # Print the wrapped text in the specified color
-        print(color + ' '.join(wrapped_args) + colors.ENDC, **kwargs)
+        print(color + '\n' + ' '.join(wrapped_args) + "\n" + colors.ENDC, **kwargs)
     else:
         # Print the text without line wrapping in the specified color
-        print(color + ' '.join(args) + colors.ENDC, **kwargs)
+        print(color + '\n' + ' '.join(args) + "\n" + colors.ENDC, **kwargs)

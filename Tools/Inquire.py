@@ -26,10 +26,10 @@ class Inquire(OpenAISchema):
         default="",
         description="Your own chain of thought. Maybe be useful for the recipient to understand your thought process."
     )
-    useTools: bool = Field(
-        default = False,
-        description="Whether or not you allow the recipient to have access to their tools in order to complete the inquiry. Typically left as default false because this inquiry tool is meant for their own knowledge, however there can be the case where the recipient would require tool access to properly respond to the inquiry."
-    )
+    # useTools: bool = Field(
+    #     default = False,
+    #     description="Whether or not you allow the recipient to have access to their tools in order to complete the inquiry. Typically left as default false because this inquiry tool is meant for their own knowledge, however there can be the case where the recipient would require tool access to properly respond to the inquiry."
+    # )
 
     def run(self, agency: 'Agency'):
 
@@ -48,7 +48,7 @@ class Inquire(OpenAISchema):
 
         Log(colors.COMMUNICATION, prompt)
 
-        response = recipient.get_completion(prompt=prompt, useTools=self.useTools)
+        response = recipient.get_completion(message=prompt, useTools=False)
 
         Log(colors.COMMUNICATION, f"{recipient.name} responded with:", response)
 

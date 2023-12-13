@@ -1,12 +1,13 @@
 # /Agents/Agent.py
 
 import json
+import os
 import time
 import openai
 from openai.types.beta.assistant import Assistant
 from openai.types.beta.thread import Thread
-from Utilities.Log import Log, colors
-from Utilities.Config import current_model
+from Utilities.Log import Debug, Log, colors
+from Utilities.Config import current_model, session_file_name
 from Tools.Plan import Plan
 from Tools.Delegate import Delegate
 from Tools.Inquire import Inquire
@@ -43,16 +44,21 @@ class Agent:
         if self._thread is None:
             self._thread = self.client.beta.threads.create()
             self.thread_id = self._thread.id
-            
+            Debug(f"Created thread for agent {self.name} with id {self.thread_id}")
             # Update session.json
-            # Find current agent config in array of 'agents'
             # and update the thread_id with the value from thread.id
-            with open("./session.json", "r") as session_file:
+            with open(session_file_name, "r+") as session_file:
                 session = json.load(session_file)
                 for agent in session["agents"]:
                     if agent["id"] == self.id:
-                        agent["thread_id"] = self._thread.id
+                        agent["thread_id"] = self.thread_id
                         break
+                    
+                session_file.seek(0) # Move the cursor back to the beginning of the file
+                json.dump(session, session_file) # Write the updated session back to the file
+                session_file.truncate() # Truncate the file to remove any leftover parts of the old content
+                session_file.flush() # Ensure the changes are written to disk
+                os.fsync(session_file.fileno())
                     
         return self._thread
 
@@ -138,10 +144,7 @@ class Agent:
                 tool_calls = run.required_action.submit_tool_outputs.tool_calls
                 tool_outputs = []
                 for tool_call in tool_calls:
-                    Log(
-                        colors.ACTION,
-                        f"{self.name} is invoking tool: {tool_call.function.name}",
-                    )
+                    Debug(f"{self.name} is invoking tool: {tool_call.function.name}")
                     # Find the tool to be executed
                     func = next(
                         (
@@ -171,10 +174,7 @@ class Agent:
 
                     self.running_tool = False
 
-                    Log(
-                        colors.ACTION,
-                        f"Tool '{tool_call.function.name}' Completed. Evaluating what to do next...",
-                    )
+                    Debug(f"Tool '{tool_call.function.name}' Completed. Reviewing tool output. Evaluating what to do next...")
 
                     # except Exception as e:
                     #     error_message = f"Error occurred in function '{tool_call.function.name}': {str(e)}"
