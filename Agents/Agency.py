@@ -18,31 +18,37 @@ from Utilities.Config import GetClient, current_model, session_file_name
 from Utilities.Log import Log, Debug, colors
 
 class Agency:
-    def __init__(self, prompt, new_session: bool = False):
+    def __init__(self, prompt, new_session: bool = False, build_agents: bool = False):
         self.client:openai  = GetClient()
+        self.thread = None
         self.agents = []
         self.plan = None
         self.prompt = prompt
         self.active_agent:Agent = None
-        self.setup(new_session)
+        self.running_tool = False
+        self.message_queue = []
+        self.setup(new_session, build_agents)
         
-    def setup(self, new_session: bool = False):
+    def setup(self, new_session: bool = False, build_agents: bool = False):
 
         sessions = []
         current_session = None
-        session_agents = []
+        agents_config = []
 
         # if session_file does not exist or has empty contents, create session file and force update new_session to True
         if not os.path.exists(session_file_name) or os.stat(session_file_name).st_size == 0:
             new_session = True
-            # Session file has the following structure {sessions: [{prompt: "", thread_id: "", agents: [{agent_id: ""}]}]}
+            build_agents = True
+            # Session file has the following structure {sessions: [{prompt: "", thread_id: ""}], agents: [{agent_id: ""}]}
             with open(session_file_name, "w") as session_file:
-                session_file.write(json.dumps({"sessions": []}) + "\n")
+                session_file.write(json.dumps({"sessions": [], "agents": []}) + "\n")
             Debug("Created session file")
         
         # Load whatever is in the session file
         with open(session_file_name, "r") as session_file:
-            sessions = json.load(session_file)["sessions"]
+            config = json.load(session_file)
+            sessions = config["sessions"]
+            agents_config = config["agents"]
 
         if new_session == False:
             for session in sessions:
@@ -53,18 +59,27 @@ class Agency:
                 Debug("No session found in file")
             else:
                 Debug("Loaded session from file")
-                session_agents = current_session["agents"]
                 thread_id = current_session["thread_id"]
                 if thread_id:
                     try:
                         self.thread = self.client.beta.threads.retrieve(thread_id)
                         Debug("Thread retrieved")
-                    except Exception as e:
+                    except Exception:
                         self.thread = None
-        
+                        
         # If we aren't able to retrieve the thread at this point, it is considered a new session
         if self.thread is None:
             new_session = True
+        else:
+            # Cancel any runs from a previous session
+            runs = self.client.beta.threads.runs.list(self.thread.id).data
+            for run in runs:
+                if run.status != "completed" and run.status != "cancelled" and run.status != "failed":
+                    self.client.beta.threads.runs.cancel(thread_id=self.thread.id,run_id=run.id)
+           
+        # If the list of agents are empty, force new generation        
+        if len(agents_config) == 0:
+            build_agents = True
 
         if new_session:
             Debug("Creating new session")
@@ -72,37 +87,47 @@ class Agency:
             if self.thread is not None:
                 self.client.beta.threads.delete(self.thread.id)
             self.thread = self.client.beta.threads.create()
-
-            for session_agent in session_agents:
-                agent_id = session_agent["agent_id"]
-                if agent_id:
-                    self.client.beta.assistants.delete(agent_id)
+            
+            # remove any sessions linked to the same prompt
+            sessions = [session for session in sessions if session["prompt"] != self.prompt]
 
             session = {
                 "prompt": self.prompt,
-                "thread_id": self.thread.id,
-                "agents": []
+                "thread_id": self.thread.id
             }
+            
+            # add session to sessions
+            sessions.append(session)
+            
+            # write to session file
+            with open(session_file_name, "w") as session_file:
+                session_file.write(json.dumps({"sessions": sessions,"agents":agents_config}) + "\n")
+            Debug("New session written to file")
+        
+        if build_agents:
+            # delete all agents from previous session
+            for agent_config in agents_config:
+                agent_id = agent_config["agent_id"]
+                if agent_id:
+                    self.client.beta.assistants.delete(agent_id)
+            agents_config = []
 
             # newly created agents in self.agents
             self.generate_agents()
 
             # extract out agent.id from self.agents array and for each add {agent_id: agent.id} to session["agents"]
             for agent in self.agents:
-                session["agents"].append({"agent_id": agent.id})
-            
-            # add session to sessions
-            sessions.append(session)
+                agents_config.append({"agent_id": agent.id})
 
             # write to session file
             with open(session_file_name, "w") as session_file:
-                session_file.write(json.dumps({"sessions": sessions}) + "\n")
-            Debug("New session written to file")
+                session_file.write(json.dumps({"sessions": sessions,"agents":agents_config}) + "\n")
+            Debug("Generated agents written to file")
 
         else:
             Debug("Retrieving agents")
-            for session_agent in session["agents"]:
-                agent_id = session_agent["agent_id"]
+            for agent_config in agents_config:
+                agent_id = agent_config["agent_id"]
                 if agent_id:
                     self.create_agent(
                         assistant=self.client.beta.assistants.retrieve(agent_id),
@@ -116,7 +141,7 @@ class Agency:
         Debug("Agency Setup Complete")
 
     def create_agent(self, assistant: Assistant, internalTools=None):
-        agent = Agent(self.client, assistant, self.thread)
+        agent = Agent(assistant, self, self.thread)
         if internalTools is not None:
             for tool in internalTools:
                 agent.add_tool(tool)
@@ -136,14 +161,14 @@ class Agency:
         # todo use the json output for better reliability
         completion = self.client.chat.completions.create(
             model="gpt-4-1106-preview",
-            response_format={"type:":"json_object"},
+            response_format={ "type": "json_object" },
             messages=[
                 {
                     "role": "system",
                     "content": """
                         Solve this problem: The prompt will be provide you a list of valid agent names and an invalid name. 
                         The goal is to identify the closest resembling valid agent name.
-                        Respond using the following format: {"Name": "User agent"}
+                        Respond using the following JSON format: {"Name": "User agent"}
                     """,
                 },
                 {"role": "user", "content": f"List of agents: {", ".join(list_of_agent_names)}\nWhat is the intended valid agent name for:\n{name}"},
@@ -164,10 +189,26 @@ class Agency:
         # todo
         self.plan = plan
 
-    def broadcast(self, message):
-        for agent in self.agents:
-            if agent != self.active_agent:
-                agent.add_message(message=message)
+    def queue_message(self, message):
+        self.message_queue.append(message)
+
+    def add_message(self, message):
+        
+        if self.running_tool:
+            self.queue_message(message)
+            return
+
+        self.waiting_on_response = False
+
+        # todo: support seed
+        # appears to currently not be supported: https://github.com/openai/openai-python/blob/790df765d41f27b9a6b88ce7b8af713939f8dc22/src/openai/resources/beta/threads/messages/messages.py#L39
+        # reported issue: https://community.openai.com/t/seed-param-and-reproducible-output-do-not-work/487245
+
+        return self.client.beta.threads.messages.create(
+            thread_id=self.thread.id, 
+            role="user", 
+            content=message,
+        )
 
     def internal_tool_delegate(self, recipient_name, instruction, artifact=""):
         return Delegate(
@@ -264,20 +305,10 @@ class Agency:
             ],
         ), internalTools=[self.internal_tool_delegate, self.internal_tool_plan, self.internal_tool_inquire])
         
-        # Store the list of assistant ids to ./session.json
-        with open(session_file_name, "w") as session_file:
-            agent_data = []
-            for agent in self.agents:
-                agent_data.append({
-                    "id": agent.id,
-                    "thread_id": agent.thread_id if agent.thread_id else ""
-                })
-            session_file.write(json.dumps({"agents": agent_data}) + "\n")
-
-    def operate(self):
+    def operate(self, prompt):
         
         # Trigger the initial delegation
-        self.active_agent.get_completion()
+        response = self.active_agent.get_completion(prompt)
 
         while self.active_agent.waiting_on_response == False:
             

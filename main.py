@@ -8,7 +8,7 @@ from Utilities.Log import Log, colors
 
 user_message = sys.argv[1] if len(sys.argv) > 1 else input("\n\nAUTO: How can I help you?\n\n> ")
 
-agency:Agency = Agency(prompt=user_message, new_session=False)
+agency:Agency = Agency(prompt=user_message, new_session=True, build_agents=False)
 
 user_agent:Agent = agency.get_agent(UserAgent.name)
 agency.active_agent = user_agent
@@ -25,6 +25,7 @@ prompt += "We will get the user's acceptance before executing the plan\n"
     
 agency.prompt = user_message
 
+# todo, fix this: this cant be the plan as it rarely adheres to the tool output <- this is what we want to capture, store and broadcast
 agency.plan = user_agent.get_completion(message=prompt)
 
 approval_msg = "Waiting for feedback from user. Type 'approve' to execute the plan"
@@ -38,25 +39,17 @@ while user_message.lower() != "approve":
     break
 
 prompt = "The user has approved the plan.\n"
-prompt += "In order to broadcast the plan to the agency, please respond with the user approved plan and nothing else.\n"
-
-# todo, fix this: this cant be the plan as it rarely adheres to the tool output <- this is what we want to capture, store and broadcast
-agency.plan = user_agent.get_completion(message=prompt)
-
-# todo
-# agency.broadcast(message=the_mission_plan)
-
-prompt = "Execute the plan accordingly.\n"
+prompt += "Execute the plan accordingly.\n"
 prompt += "If you are not the agent in step 1, then use your tool 'Delegate' on the first agent in the plan.\n"
 prompt += "Providing them with their mission\n"
-user_agent.add_message(message=prompt)
+
 Log(colors.ACTION, f"Executing Plan...")
 
 # Continue interacting with user agent until the plan is complete
 while True:
 
     # This initiates all agents to co-operate the mission
-    response = agency.operate()
+    response = agency.operate(prompt=prompt)
 
     # The agency has done their work and require user feedback
 

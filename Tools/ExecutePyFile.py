@@ -70,6 +70,7 @@ class ExecutePyFile(OpenAISchema):
         
         # If file doesnt exist, return message
         if not os.path.exists(self.directory + self.file_name):
+            Log(colors.ERROR, f"Failed attempt to exist non existing file: {self.directory + self.file_name}")
             return f"File {self.directory + self.file_name} does not exist."
         
         try:

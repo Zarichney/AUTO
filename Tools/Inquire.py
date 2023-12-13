@@ -49,7 +49,7 @@ class Inquire(OpenAISchema):
 
         response = recipient.get_completion(message=prompt, useTools=False)
 
-        Log(colors.COMMUNICATION, f"{recipient.name} response to {current_agent.name}:\n{response}")
+        Log(colors.COMMUNICATION, f"{recipient.name} response to {current_agent.name}:\n{response}\n_______________________")
 
         return f"{recipient.name}:\n{response}"
 

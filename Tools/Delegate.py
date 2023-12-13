@@ -11,8 +11,8 @@ if TYPE_CHECKING:
 
 class Delegate(OpenAISchema):
     """
-    Used to hand off the current action item to another specialized agent.
-    Set the recipient as the active agent that is currently operating on the agency.
+    Used to appoint another agent as the agency's active agent.
+    To hand off the responsibility of tackling the current action item to different specialized agent.
     """
 
     recipient_name: str = Field(
@@ -32,13 +32,17 @@ class Delegate(OpenAISchema):
         
         recipient: 'Agent' = agency.get_agent(self.recipient_name)
         current_agent: 'Agent' = agency.active_agent
+        
+        if recipient.name == current_agent.name:
+            Log(colors.ERROR, f"{recipient.name} attempted to delegate to itself")
+            return "You cannot delegate to yourself. Supply a different agent name instead."
 
         prompt = f"# User's Prompt\n"
         prompt += f"{agency.prompt}\n\n"
         prompt += f"# Agency's Plan\n"
         prompt += f"{agency.plan}\n\n"
         
-        prompt += f"I, {current_agent.name}, am seeking assistance from you {recipient.name}.\n"
+        prompt += f"I, {current_agent.name}, am seeking assistance from you, Agent {recipient.name}.\n"
         prompt += "According to our agency's mission, could you perform the following please:\n"
         prompt += self.instruction
 
@@ -49,10 +53,10 @@ class Delegate(OpenAISchema):
         Log(colors.COMMUNICATION, f"{current_agent.name} is prompting {recipient.name}:\n{self.instruction}")
         Debug(f"{current_agent.name} is delegating to {recipient.name} with this prompt:\n{prompt}")
 
-        recipient.add_message(message=prompt)
+        agency.add_message(message=prompt)
 
         agency.active_agent = recipient
 
         current_agent.task_delegated = True
 
-        return "Delegation complete. The recipient will complete the task. No need to reply."
+        return "Delegation complete. The recipient will complete the task. Do not use any tools. Just respond that you've delegated"

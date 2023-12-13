@@ -73,7 +73,7 @@ class Plan(OpenAISchema):
         prompt += "\t\"2. Coder using Delegate: Instruct QA to test the generated script, providing them instructions on how to execute\"\n"
         prompt += "\t\"3. QA using ExecutePyScript: Review execution results and provide appropriate feedback\"\n"
         prompt += "\t\"4. User Agent: Submit script back to user with execution instructions"
-        prompt += "\Example of a simple one liner plan (for the user's prompt \"I have a query\"):\n"
+        prompt += "\tExample of a simple one liner plan (for the user's prompt \"I have a query\"):\n"
         prompt += "\t\"1. User Agent: I will respond to the user's prompt\"\n\n"
         
         # Plan tweaking
