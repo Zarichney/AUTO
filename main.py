@@ -6,15 +6,14 @@ from Agents.Agency import Agency
 from Agents import UserAgent
 from Utilities.Log import Log, colors
 
-agency:Agency = Agency(new_session=False)
+user_message = sys.argv[1] if len(sys.argv) > 1 else input("\n\nAUTO: How can I help you?\n\n> ")
+
+agency:Agency = Agency(prompt=user_message, new_session=False)
 
 user_agent:Agent = agency.get_agent(UserAgent.name)
 agency.active_agent = user_agent
 
-user_message = sys.argv[1] if len(sys.argv) > 1 else input("\n\nAUTO: How can I help you?\n\n> ")
-
-# todo store the prompt to file and if the user provides the same prompt
-# inquire with user whether we should continue session or restart
+# todo inquire with user whether we should continue session or restart
 
 Log(colors.ACTION, f"Processing...")
         

@@ -1,13 +1,11 @@
 # /Agents/Agent.py
 
-import json
-import os
 import time
 import openai
 from openai.types.beta.assistant import Assistant
 from openai.types.beta.thread import Thread
 from Utilities.Log import Debug, Log, colors
-from Utilities.Config import current_model, session_file_name
+from Utilities.Config import current_model
 from Tools.Plan import Plan
 from Tools.Delegate import Delegate
 from Tools.Inquire import Inquire
@@ -18,53 +16,32 @@ from Tools.DownloadFile import DownloadFile
 from Tools.MoveFile import MoveFile
 
 class Agent:
-    def __init__(self, client:openai, assistant:Assistant, thread:Thread=None):
-        self.client = client
+    def __init__(self, assistant:Assistant, client:openai, thread:Thread):
+        if not assistant:
+            raise Exception("Assistant not supplied")
         if not client:
-            # throw error
             raise Exception("OpenAI Client not found.")
+        if not thread:
+            raise Exception("Thread required")
+        
         self.assistant = assistant
-        self.id = assistant.id
-        self.name = assistant.name
-        self.description = assistant.description
-        self.instructions = assistant.instructions
-        self.services = getattr(assistant, 'metadata', {}).get("services", [])
-        self.thread = thread
-        self.thread_id = thread.id if thread is not None else None
+        self.client:openai = client
+        self.thread:Thread = thread
+
+        self.id = self.assistant.id
+        self.name = self.assistant.name
+        self.description = self.assistant.description
+        self.instructions = self.assistant.instructions
+        self.services = getattr(self.assistant, 'metadata', {}).get("services", [])
+
         self.waiting_on_response = False
         self.task_delegated = False
+
         self.tools = []
         self.shared_tools = [ReadFile,CreateFile,DownloadFile,MoveFile,ExecutePyFile]
         self.internal_tools = [Plan,Delegate,Inquire]
         self.running_tool = False
         self.setup_tools()
-
-    @property
-    def thread(self):
-        if self._thread is None:
-            self._thread = self.client.beta.threads.create()
-            self.thread_id = self._thread.id
-            Debug(f"Created thread for agent {self.name} with id {self.thread_id}")
-            # Update session.json
-            # and update the thread_id with the value from thread.id
-            with open(session_file_name, "r+") as session_file:
-                session = json.load(session_file)
-                for agent in session["agents"]:
-                    if agent["id"] == self.id:
-                        agent["thread_id"] = self.thread_id
-                        break
-                    
-                session_file.seek(0) # Move the cursor back to the beginning of the file
-                json.dump(session, session_file) # Write the updated session back to the file
-                session_file.truncate() # Truncate the file to remove any leftover parts of the old content
-                session_file.flush() # Ensure the changes are written to disk
-                os.fsync(session_file.fileno())
-                    
-        return self._thread
-
-    @thread.setter
-    def thread(self, value):
-        self._thread = value
     
     def add_tool(self, tool):
         self.tools.append(tool)
@@ -95,32 +72,24 @@ class Agent:
     def get_completion(self, message=None, useTools=True):
 
         client = self.client
-
         thread = self.thread
 
         if self.running_tool:
-            completion = client.chat.completions.create(
-            model=current_model,
-            messages=[
-                {"role": "system", "content": self.instructions},
-                {"role": "user", "content": message}
-            ]
-            )
-            response = completion.choices[0].message.content
-
-            return response
-
+            Log.Error(f"Agent called for completion whil it's currently waiting on tool usage to complete. Falling back to thread-less completion")
+            return client.chat.completions.create(
+                model=current_model,
+                messages=[
+                    {"role": "system", "content": self.instructions},
+                    {"role": "user", "content": message}
+                ]
+            ).choices[0].message.content
 
         self.waiting_on_response = False
-
-        if not thread:
-            # throw error
-            raise Exception(f"Thread for agent {self.name} not found.")
 
         if message is not None:
             message = self.add_message(message=message)
 
-        # run this thread
+        # run creation
         if useTools:
             run = client.beta.threads.runs.create(
                 thread_id=thread.id,
@@ -194,7 +163,7 @@ class Agent:
             elif run.status == "failed":
                 raise Exception("Run Failed. Error: ", run.last_error)
 
-            # return assistant message
+            # return assistant response
             else:
                 completion = client.beta.threads.messages.list(thread_id=thread.id)
                 response = completion.data[0].content[0].text.value
