@@ -124,13 +124,12 @@ class Agency:
             artifact=artifact
             ).run(agency=self)
 
-    def internal_tool_plan(self, mission, team_planning=False):
+    def internal_tool_plan(self, mission):
         return Plan(
             mission=mission,
-            team_planning=team_planning,
             ).run(agency=self)
 
-    def internal_tool_inquire(self, recipient_name, prompt, chain_of_thought=""):
+    def internal_tool_inquire(self, recipient_name, prompt, chain_of_thought):
         return Inquire(
             recipient_name=recipient_name,
             prompt=prompt,

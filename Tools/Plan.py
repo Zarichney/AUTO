@@ -11,17 +11,12 @@ if TYPE_CHECKING:
 
 class Plan(OpenAISchema):
     """
-    Used to review mission against the environment (team and/or tools resources available) to generate a workflow of action items.
+    Generates a workflow of actionable steps.
     """
 
     mission: str = Field(
         ..., 
         description="The goal that the agent would like to achieve. Will be used as the basis for planning"
-    )
-
-    team_planning: bool = Field(
-        default=False,
-        description="Flag to indicate whether the plan is for the entire team or just the agent. If true, the plan will include the team composition."
     )
 
     def run(self, agency: 'Agency'):
@@ -38,7 +33,7 @@ class Plan(OpenAISchema):
             prompt += "# Agency's Plan\n\n"
             prompt += agency.plan + "\n\n"
 
-        if master_plan_creation or self.team_planning:
+        if master_plan_creation:
             # Add team details
             prompt += "# Team Composition: \n"
             for agent in agency.agents:
@@ -50,7 +45,7 @@ class Plan(OpenAISchema):
             prompt += "\n"
         
         # Add available tools to prompt:
-        if master_plan_creation or self.team_planning:
+        if master_plan_creation:
             toolkit = current_agent.shared_tools + current_agent.internal_tools
         else:
             toolkit = current_agent.tools
@@ -66,20 +61,19 @@ class Plan(OpenAISchema):
             Log(colors.ERROR, f"Error in Plan.py: {e}")
             Log(colors.ERROR, f"Toolkit: {toolkit}")
             Log(colors.ERROR, f"master_plan_creation: {master_plan_creation}")
-            Log(colors.ERROR, f"self.team_planning: {self.team_planning}")
     
         # Instruction to review inputs and make a plan
         prompt += "# Plan Structure\n\n"
-        prompt += "The plan is a workflow of actionable steps that will be executed to accomplish the mission.\n"
-        prompt += "An Actional Step is specific instruction conducted by a single agent as either a single response or a tool usage\n"
-        prompt += "Delegation is considered an actional step: it's the usage of the 'Delegate' tool.\n\n"
+        prompt += "The plan is a workflow of **actionable steps** that will be executed to accomplish the mission.\n"
+        prompt += "An actionable step is specific instruction conducted by a single agent via a tool usage\n"
         prompt += "The plan format adhere's to the following structure:\n"
-        prompt += "<step_number> + \". '\" + <agent_name> + \"'\" + (optional: \"-->'\" + <tool_name> + \"') + \": \" + <response | tool_usage>\"\n"
-        prompt += "\nMulti Step Example:\n"
-        prompt += "\t\"1. Coder: Create the script using tool 'CreateFile'\"\n"
-        prompt += "\t\"2. Coder: Provide QA with the generated script to do a code review using tool 'Delegate'\"\n"
-        prompt += "\t\"3. QA: Analyze script and provide feedback using tool 'ReadFile'\"\n"
-        prompt += "\nSample of a simple one liner plan:\n"
+        prompt += "<step_number> + \".\" + <agent_name> + \" using \" + <tool_name> + \": \" + <description of instruction or expected deliverable>\"\n"
+        prompt += "\nExample of a simplified multi step workflow (for the user's prompt \"Create me a script\"):\n"
+        prompt += "\t\"1. Coder using CreateFile: Create the script\"\n"
+        prompt += "\t\"2. Coder using Delegate: Instruct QA to test the generated script, providing them instructions on how to execute\"\n"
+        prompt += "\t\"3. QA using ExecutePyScript: Review execution results and provide appropriate feedback\"\n"
+        prompt += "\t\"4. User Agent: Submit script back to user with execution instructions"
+        prompt += "\Example of a simple one liner plan (for the user's prompt \"I have a query\"):\n"
         prompt += "\t\"1. User Agent: I will respond to the user's prompt\"\n\n"
         
         # Plan tweaking
@@ -95,12 +89,13 @@ class Plan(OpenAISchema):
         prompt += "    - During refusals, provide detailed explanations:\n"
         prompt += "      - Why the mission cannot be carried out or the plan cannot be generated.\n"
         prompt += "      - Clarify what changes are needed for a successful attempt.\n"
-        prompt += "- Delegation is key:\n"
-        prompt += "  - Each agent is equipped with 'Delegate' to perform the handoff of the tasks.\n"
-        prompt += "  - The invocation of the tool 'Delegate' is to be it's own step in the plan, ensuring proper delegation.\n"
+        if master_plan_creation:
+            prompt += "- Delegation is key:\n"
+            prompt += "  - Each agent is equipped with 'Delegate' to perform the handoff of the tasks.\n"
+            prompt += "  - The invocation of the tool 'Delegate' is to be it's own step in the plan, ensuring proper delegation.\n"
 
         prompt += "\n\n**THE GOAL IN PLAN CREATION IS TO SIMPLY CONSIDER THE MISSION AGAINST "
-        if master_plan_creation or self.team_planning:
+        if master_plan_creation:
             prompt += "THE ENVIRONMENT (AGENTS AND TOOLS AVAILABLE)"
         else:
             prompt += "YOUR CAPABILITIES"
@@ -112,6 +107,8 @@ class Plan(OpenAISchema):
         if master_plan_creation:
             Log(colors.ACTION, f"Agency is generating a plan\n")
         
+        # todo: need to test whether its better to have the plan generated here,
+        # or have this prompted returned as tool output for agent to decide what to do next
         plan = current_agent.get_completion(message=prompt, useTools=False)
 
         Log(colors.RESULT, f"\nPlan Generated:\n{plan}\n")

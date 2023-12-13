@@ -11,7 +11,8 @@ if TYPE_CHECKING:
 
 class Delegate(OpenAISchema):
     """
-    Hand off the current action item to another specialized agent
+    Used to hand off the current action item to another specialized agent.
+    Set the recipient as the active agent that is currently operating on the agency.
     """
 
     recipient_name: str = Field(
@@ -32,12 +33,13 @@ class Delegate(OpenAISchema):
         recipient: 'Agent' = agency.get_agent(self.recipient_name)
         current_agent: 'Agent' = agency.active_agent
 
-        prompt = f"Agency's mission:\n"
+        prompt = f"# User's Prompt\n"
         prompt += f"{agency.prompt}\n\n"
-        prompt += f"The user has approved of the following plan:\n"
+        prompt += f"# Agency's Plan\n"
         prompt += f"{agency.plan}\n\n"
+        
         prompt += f"I, {current_agent.name}, am seeking assistance from you {recipient.name}.\n"
-        prompt = "Could you help with the following instruction please:\n"
+        prompt += "According to our agency's mission, could you perform the following please:\n"
         prompt += self.instruction
 
         if self.artifact != "":
@@ -45,13 +47,12 @@ class Delegate(OpenAISchema):
             prompt += f"{self.artifact}\n\n"
         
         Log(colors.COMMUNICATION, f"{current_agent.name} is prompting {recipient.name}:\n{self.instruction}")
+        Debug(f"{current_agent.name} is delegating to {recipient.name} with this prompt:\n{prompt}")
 
         recipient.add_message(message=prompt)
 
         agency.active_agent = recipient
 
         current_agent.task_delegated = True
-
-        Debug(f"{current_agent.name} is delegating to {recipient.name} with this prompt:\n{prompt}")
 
         return "Delegation complete. The recipient will complete the task. No need to reply."

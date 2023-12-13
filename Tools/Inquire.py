@@ -23,8 +23,7 @@ class Inquire(OpenAISchema):
         description="The inquiry to send to the recipient agent",
     )
     chain_of_thought: str = Field(
-        default="",
-        description="Your own chain of thought. Maybe be useful for the recipient to understand your thought process."
+        description="Your own chain of thought. Useful for the recipient to understand your thought process."
     )
     # useTools: bool = Field(
     #     default = False,
@@ -38,19 +37,19 @@ class Inquire(OpenAISchema):
 
         prompt = f"{recipient.name}, it is I, {current_agent.name}.\n"
         prompt += "I have an inquiry for you:\n\n"
-        prompt += f"{self.prompt}\n"
+        prompt += f"{self.prompt}\n\n"
         
-        if self.chain_of_thought != "":
-            prompt += f"\n\nMy chain of thought is:\n"
-            prompt += f"{self.chain_of_thought}\n"
+        prompt += f"My chain of thought is:\n"
+        prompt += f"{self.chain_of_thought}\n\n"
 
-        prompt += "\nCould you share what you think step by step?\n"
+        prompt += "Could you share what you think step by step?\n"
 
-        Log(colors.COMMUNICATION, prompt)
+        Log(colors.COMMUNICATION, f"{current_agent.name} is inquiring to {recipient.name}:\n{self.prompt}")
+        Debug(f"{current_agent.name} used inquiry tool on {recipient.name}. Full prompt:\n{prompt}")
 
         response = recipient.get_completion(message=prompt, useTools=False)
 
-        Log(colors.COMMUNICATION, f"{recipient.name} responded with:", response)
+        Log(colors.COMMUNICATION, f"{recipient.name} response to {current_agent.name}:\n{response}")
 
-        return response
+        return f"{recipient.name}:\n{response}"
 
