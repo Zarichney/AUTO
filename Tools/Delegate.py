@@ -23,10 +23,6 @@ class Delegate(OpenAISchema):
         ...,
         description="Specify the task required for the recipient agent to complete. Recall the agency's plan and speak to the assistant in terms of the action items you want them to complete.",
     )
-    artifact: str = Field(
-        default="",
-        description="The artifact to be passed to the recipient agent. This could be a file, a message, or a tool output."
-    )
 
     def run(self, agency: 'Agency'):
         
@@ -39,24 +35,23 @@ class Delegate(OpenAISchema):
 
         prompt = f"# User's Prompt\n"
         prompt += f"{agency.prompt}\n\n"
-        prompt += f"# Agency's Plan\n"
-        prompt += f"{agency.plan}\n\n"
+        
+        # Every fifth delegation, the agency will remind the agent of the plan
+        if agency.delegation_count % 5 == 0:
+            prompt += f"# Agency's Plan\n"
+            prompt += f"{agency.plan}\n\n"
         
         prompt += f"I, {current_agent.name}, am seeking assistance from you, Agent {recipient.name}.\n"
         prompt += "According to our agency's mission, could you perform the following please:\n"
         prompt += self.instruction
 
-        if self.artifact != "":
-            prompt += f"\n\nThe artifact we are working on is:\n"
-            prompt += f"{self.artifact}\n\n"
-        
         Log(colors.COMMUNICATION, f"{current_agent.name} is prompting {recipient.name}:\n{self.instruction}")
         Debug(f"{current_agent.name} is delegating to {recipient.name} with this prompt:\n{prompt}")
 
         agency.add_message(message=prompt)
 
         agency.active_agent = recipient
-
+        agency.delegation_count += 1
         current_agent.task_delegated = True
 
         return "Delegation complete. The recipient will complete the task. Do not use any tools. Just respond that you've delegated"

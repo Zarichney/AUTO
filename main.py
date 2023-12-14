@@ -4,11 +4,11 @@ import sys
 from Agents.Agent import Agent
 from Agents.Agency import Agency
 from Agents import UserAgent
-from Utilities.Log import Log, colors
+from Utilities.Log import Log, Debug, colors
 
 user_message = sys.argv[1] if len(sys.argv) > 1 else input("\n\nAUTO: How can I help you?\n\n> ")
 
-agency:Agency = Agency(prompt=user_message, new_session=True, build_agents=False)
+agency:Agency = Agency(prompt=user_message, new_session=False, build_agents=False)
 
 user_agent:Agent = agency.get_agent(UserAgent.name)
 agency.active_agent = user_agent
@@ -37,6 +37,9 @@ while user_message.lower() != "approve":
     Log(colors.RESULT, f"{user_agent.name}: {response}")
     user_message = input(f"{approval_msg}\n\n> ")
     break
+
+agency.plan = response
+Debug(f"Saving response as agency plan: {agency.plan}")
 
 prompt = "The user has approved the plan.\n"
 prompt += "Execute the plan accordingly.\n"

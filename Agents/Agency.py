@@ -27,6 +27,7 @@ class Agency:
         self.active_agent:Agent = None
         self.running_tool = False
         self.message_queue = []
+        self.delegation_count = 0
         self.setup(new_session, build_agents)
         
     def setup(self, new_session: bool = False, build_agents: bool = False):
@@ -156,7 +157,7 @@ class Agency:
         Log(colors.ERROR, f"Agent named '{name}' not found in agency. Engaging fall back...")
         
         list_of_agent_names = [agent.name for agent in self.agents]
-        Log(colors.ERROR, f"Actual agent names: '{"', '".join(list_of_agent_names)}'")
+        Log(colors.ERROR, f"Actual agent names: {', '.join(list_of_agent_names)}")
 
         # todo use the json output for better reliability
         completion = self.client.chat.completions.create(
@@ -171,7 +172,7 @@ class Agency:
                         Respond using the following JSON format: {"Name": "User agent"}
                     """,
                 },
-                {"role": "user", "content": f"List of agents: {", ".join(list_of_agent_names)}\nWhat is the intended valid agent name for:\n{name}"},
+                {"role": "user", "content": f"List of agents: {', '.join(list_of_agent_names)}\nWhat is the intended valid agent name for:\n{name}"},
             ],
         )
         
@@ -210,11 +211,10 @@ class Agency:
             content=message,
         )
 
-    def internal_tool_delegate(self, recipient_name, instruction, artifact=""):
+    def internal_tool_delegate(self, recipient_name, instruction):
         return Delegate(
             recipient_name=recipient_name, 
             instruction=instruction,
-            artifact=artifact
             ).run(agency=self)
 
     def internal_tool_plan(self, mission):
@@ -313,7 +313,7 @@ class Agency:
         Debug(f"Response: {response}")
     
         while self.active_agent.waiting_on_response == False:
-            Debug(f"Active agent: {self.active_agent}")
+            Debug(f"Active agent: {self.active_agent.name}")
             
             # Store the name so that we can recognize who the previous agent was after a delegation
             active_agent_name = self.active_agent.name
@@ -330,13 +330,13 @@ class Agency:
             # Get user agent to handle the response in order to automate the next step if an agent response instead of tool usage
             elif previous_agent.task_delegated == False and active_agent_name != UserAgent.name:
                 prompt = f"{response}\n\n In regards to the overall plan. What do we do now leader?"
-                Debug(f"{active_agent_name} will now talk to user agent:\n{prompt}")
+                Debug(f"{active_agent_name} has responded and is addressing user agent:\n{prompt}")
                 user_agent = self.get_agent(UserAgent.name)
                 self.active_agent.waiting_on_response = False
                 self.active_agent = user_agent
                 # Attempt to delegate
                 response = user_agent.get_completion(message=prompt)
-                Debug(f"User agent is expected to have delegated. This was its response: {response}")
+                Debug(f"User agent is expected to have delegated. This was its response:\n{response}")
                 Debug(f"The new active agent is: {self.active_agent.name}")
                 # If the user agent is still active, this will get the response sent back to the user
                 if self.active_agent.name == UserAgent.name:
