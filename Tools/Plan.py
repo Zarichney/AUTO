@@ -48,18 +48,18 @@ class Plan(OpenAISchema):
         if master_plan_creation:
             toolkit = current_agent.shared_tools + current_agent.internal_tools
         else:
-            toolkit = current_agent.tools
+            toolkit = current_agent.tools # todo i think the issue here is that its being fed the internal function
         
         prompt += "# Available Tools: \n"
         try:
             for tool in toolkit:
                 schema = tool.openai_schema
-                prompt += "## " + schema['name'] + "\n"
+                prompt += "## " + schema['name'] + "\n" 
                 prompt += schema['description'] + "\n\n"
             prompt += "\n"
         except Exception as e:
             Log(colors.ERROR, f"Error in Plan.py: {e}")
-            Log(colors.ERROR, f"Toolkit: {toolkit}")
+            Log(colors.ERROR, f"Tools: {' | '.join([tool for tool in toolkit])}")
             Log(colors.ERROR, f"master_plan_creation: {master_plan_creation}")
     
         # Instruction to review inputs and make a plan

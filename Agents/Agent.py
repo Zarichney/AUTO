@@ -59,7 +59,7 @@ class Agent:
         thread = self.thread
 
         if self.agency.running_tool:
-            Log(colors.ERROR, f"Agent called for completion while it's currently waiting on tool usage to complete. Falling back to thread-less completion")
+            Debug(f"Agent called for completion while it's currently waiting on tool usage to complete. Falling back to thread-less completion")
             return client.chat.completions.create(
                 model=current_model,
                 messages=[

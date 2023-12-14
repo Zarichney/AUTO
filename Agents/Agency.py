@@ -306,48 +306,42 @@ class Agency:
         ), internalTools=[self.internal_tool_delegate, self.internal_tool_plan, self.internal_tool_inquire])
         
     def operate(self, prompt):
-        
+            
         # Trigger the initial delegation
+        Debug(f"{self.active_agent.name}: {prompt}")
         response = self.active_agent.get_completion(prompt)
-
+        Debug(f"Response: {response}")
+    
         while self.active_agent.waiting_on_response == False:
+            Debug(f"Active agent: {self.active_agent}")
             
-            Debug(f"active_agent.name: {self.active_agent.name}")
-            Debug(f"active_agent.waiting_on_response: {self.active_agent.waiting_on_response}")
-            Debug(f"active_agent.task_delegated: {self.active_agent.task_delegated}")
-            
+            # Store the name so that we can recognize who the previous agent was after a delegation
             active_agent_name = self.active_agent.name
             
-            Debug("before get_completion()")
             response = self.active_agent.get_completion()
-            Debug(f"after get_completion()\n{response}")
+            Log(colors.COMMUNICATION, f"{self.active_agent.name}:\n{response}")
             
             previous_agent = self.get_agent(active_agent_name)
-            Debug(f"previous_agent.name: {previous_agent.name}")
-            Debug(f"previous_agent.waiting_on_response: {previous_agent.waiting_on_response}")
-            Debug(f"previous_agent.task_delegated: {previous_agent.task_delegated}")
             
-            Debug(f"active_agent.name: {self.active_agent.name}")
-            Debug(f"active_agent.waiting_on_response: {self.active_agent.waiting_on_response}")
-            Debug(f"active_agent.task_delegated: {self.active_agent.task_delegated}")
-            
-            if previous_agent.task_delegated == True and self.active_agent.name != previous_agent.name:
-                # Turn this flag off now that it's been delegated
+            if previous_agent.task_delegated == True:
+                # Turn this flag off now that delegation is completed
                 previous_agent.task_delegated == False
             
+            # Get user agent to handle the response in order to automate the next step if an agent response instead of tool usage
             elif previous_agent.task_delegated == False and active_agent_name != UserAgent.name:
-                Debug(f"{active_agent_name} has provided a response:\n{response}")
-                # Get user agent to handle the response
+                prompt = f"{response}\n\n In regards to the overall plan. What do we do now leader?"
+                Debug(f"{active_agent_name} will now talk to user agent:\n{prompt}")
                 user_agent = self.get_agent(UserAgent.name)
                 self.active_agent.waiting_on_response = False
                 self.active_agent = user_agent
-                prompt = f"{response}\n\n In regards to the overall plan. What do we do now leader?"
-                user_agent_response = user_agent.get_completion(message=prompt)
-                Debug(f"User agent is expected to have delegated.\nThis was its response: {user_agent_response}")
+                # Attempt to delegate
+                response = user_agent.get_completion(message=prompt)
+                Debug(f"User agent is expected to have delegated. This was its response: {response}")
                 Debug(f"The new active agent is: {self.active_agent.name}")
-                # The user agent response shouldnt matter as its the instruction to say it finished delegating
-                # But now a message has been dropped on the thread of the new delegate
-                # And the loop will restart, causing the delegate to react to the user agent's command to continue the mission
+                # If the user agent is still active, this will get the response sent back to the user
+                if self.active_agent.name == UserAgent.name:
+                    self.active_agent.waiting_on_response = True
+                # When successfully delegated, loop will restart, causing the next agent to pick up the delegate instruction message
         
         Debug(f"{self.active_agent.name} is returning back to the user with: {response}")
         return response

@@ -49,7 +49,10 @@ Log(colors.ACTION, f"Executing Plan...")
 while True:
 
     # This initiates all agents to co-operate the mission
-    response = agency.operate(prompt=prompt)
+    try:
+        response = agency.operate(prompt=prompt)
+    except Exception as e:
+        Log(colors.ERROR, f"Error in main.py: {e}")
 
     # The agency has done their work and require user feedback
 
