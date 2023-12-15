@@ -14,6 +14,8 @@ from Tools.CreateFile import CreateFile
 from Tools.DownloadFile import DownloadFile
 from Tools.MoveFile import MoveFile
 from Tools.ExecutePyFile import ExecutePyFile
+from Tools.GetDirectoryContents import GetDirectoryContents
+from Tools.RecipeScraper.RecipeScaper import RecipeScaper
 from Utilities.Config import GetClient, current_model, session_file_name
 from Utilities.Log import Log, Debug, colors
 
@@ -247,6 +249,7 @@ class Agency:
                 {"type": "function", "function": MoveFile.openai_schema},
                 {"type": "function", "function": DownloadFile.openai_schema},
                 {"type": "function", "function": ExecutePyFile.openai_schema},
+                {"type": "function", "function": GetDirectoryContents.openai_schema},
             ],
         ), internalTools=[self.internal_tool_delegate, self.internal_tool_plan, self.internal_tool_inquire])
         
@@ -265,6 +268,7 @@ class Agency:
                 {"type": "function", "function": CreateFile.openai_schema},
                 {"type": "function", "function": DownloadFile.openai_schema},
                 {"type": "function", "function": ExecutePyFile.openai_schema},
+                {"type": "function", "function": GetDirectoryContents.openai_schema},
             ],
         ), internalTools=[self.internal_tool_delegate, self.internal_tool_plan, self.internal_tool_inquire])
         
@@ -284,6 +288,7 @@ class Agency:
                 {"type": "function", "function": CreateFile.openai_schema},
                 {"type": "function", "function": DownloadFile.openai_schema},
                 {"type": "function", "function": ExecutePyFile.openai_schema},
+                {"type": "function", "function": GetDirectoryContents.openai_schema},
             ],
         ), internalTools=[self.internal_tool_delegate, self.internal_tool_plan, self.internal_tool_inquire])
         
@@ -302,6 +307,8 @@ class Agency:
                 {"type": "function", "function": CreateFile.openai_schema},
                 {"type": "function", "function": DownloadFile.openai_schema},
                 {"type": "function", "function": ExecutePyFile.openai_schema},
+                {"type": "function", "function": GetDirectoryContents.openai_schema},
+                {"type": "function", "function": RecipeScaper.openai_schema},
             ],
         ), internalTools=[self.internal_tool_delegate, self.internal_tool_plan, self.internal_tool_inquire])
         
