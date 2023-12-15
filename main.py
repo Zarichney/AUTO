@@ -26,7 +26,7 @@ prompt += "We will get the user's acceptance before executing the plan\n"
 agency.prompt = user_message
 
 # todo, fix this: this cant be the plan as it rarely adheres to the tool output <- this is what we want to capture, store and broadcast
-agency.plan = user_agent.get_completion(message=prompt)
+response = user_agent.get_completion(message=prompt)
 
 approval_msg = "Waiting for feedback from user. Type 'approve' to execute the plan"
 

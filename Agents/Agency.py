@@ -311,6 +311,9 @@ class Agency:
         Debug(f"{self.active_agent.name}: {prompt}")
         response = self.active_agent.get_completion(prompt)
         Debug(f"Response: {response}")
+        
+        user_agent = self.get_agent(UserAgent.name)
+        user_agent.task_delegated = False
     
         while self.active_agent.waiting_on_response == False:
             Debug(f"Active agent: {self.active_agent.name}")
@@ -331,12 +334,11 @@ class Agency:
             elif previous_agent.task_delegated == False and active_agent_name != UserAgent.name:
                 prompt = f"{response}\n\n In regards to the overall plan. What do we do now leader?"
                 Debug(f"{active_agent_name} has responded and is addressing user agent:\n{prompt}")
-                user_agent = self.get_agent(UserAgent.name)
                 self.active_agent.waiting_on_response = False
                 self.active_agent = user_agent
                 # Attempt to delegate
                 response = user_agent.get_completion(message=prompt)
-                Debug(f"User agent is expected to have delegated. This was its response:\n{response}")
+                Debug(f"User agent is expected to have delegated. This was its response:{response}")
                 Debug(f"The new active agent is: {self.active_agent.name}")
                 # If the user agent is still active, this will get the response sent back to the user
                 if self.active_agent.name == UserAgent.name:
