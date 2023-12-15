@@ -30,26 +30,27 @@ from Tools.CreateFile import CreateFile
 from Tools.MoveFile import MoveFile
 from Tools.DownloadFile import DownloadFile
 from Tools.ExecutePyFile import ExecutePyFile
+from Tools.GetDirectoryContents import GetDirectoryContents
 
 def get_team_instruction():
     # Build a generic team member instruction set that will be prepended to each agent's instructions
     
-    # Make them aware of the agents available:
-    team_member_instructions = team_instruction
-    team_member_instructions += "\n## Agency\n"
-    for agent in [UserAgent, CodingAgent, QaAgent, RecipeAgent]:
-        team_member_instructions += "### " + agent.name + "\n" 
-        team_member_instructions += agent.description + "\n"
-        team_member_instructions += agent.services + "\n"
-    team_member_instructions += "\n\n"
+    # Temporarily turning this off while RecipeAgent is working on their solo mission
+    # # Make them aware of the agents available:
+    # team_member_instructions = team_instruction
+    # team_member_instructions += "\n## Agency\n"
+    # for agent in [UserAgent, CodingAgent, QaAgent, RecipeAgent]:
+    #     team_member_instructions += f"- {agent.name}:\n" 
+    #     team_member_instructions += agent.description + "\n"
+    #     team_member_instructions += agent.services + "\n"
+    # team_member_instructions += "\n\n"
     
     # Make them aware of the tools available:
     team_member_instructions += tool_instruction
     team_member_instructions += "\n## Tools\n"
-    for toolFile in [ReadFile, CreateFile, MoveFile, DownloadFile, ExecutePyFile, Delegate, Plan, Inquire]:
+    for toolFile in [GetDirectoryContents, ReadFile, CreateFile, MoveFile, DownloadFile, ExecutePyFile, Delegate, Plan, Inquire]:
         schema = toolFile.openai_schema
-        team_member_instructions += "### " + schema['name'] + "\n"
-        team_member_instructions += schema['description'] + "\n\n"
+        team_member_instructions += f"- {schema['name']}: {schema['description']}\n"
     team_member_instructions += "\n\n"
     
     return team_member_instructions

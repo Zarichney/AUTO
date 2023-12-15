@@ -11,9 +11,12 @@ from Tools.Delegate import Delegate
 from Tools.Inquire import Inquire
 from Tools.ReadFile import ReadFile
 from Tools.ExecutePyFile import ExecutePyFile
+from Tools.GetDirectoryContents import GetDirectoryContents
+from Tools.RecipeScraper.RecipeScaper import RecipeScaper
 from Tools.CreateFile import CreateFile
 from Tools.DownloadFile import DownloadFile
 from Tools.MoveFile import MoveFile
+from Agents import RecipeAgent
 
 class Agent:
     def __init__(self, assistant:Assistant, agency, thread:Thread):
@@ -38,7 +41,7 @@ class Agent:
         self.task_delegated = False
 
         self.tools = []
-        self.shared_tools = [ReadFile,CreateFile,DownloadFile,MoveFile,ExecutePyFile]
+        self.shared_tools = [ReadFile,CreateFile,DownloadFile,MoveFile,ExecutePyFile,GetDirectoryContents]
         self.internal_tools = [Plan,Delegate,Inquire]
         self.setup_tools()
     
@@ -50,8 +53,8 @@ class Agent:
         for tool in self.shared_tools:
             self.add_tool(tool)
 
-        # if self.name == UserAgent.name:
-        #    self.tools.append(CustomTool)
+        if self.name == RecipeAgent.name:
+           self.tools.append(RecipeScaper)
 
     def get_completion(self, message=None, useTools=True):
 
