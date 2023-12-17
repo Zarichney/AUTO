@@ -26,7 +26,7 @@ Designated for a typical monthly grocery budget of a middle-class couple without
 Tailoring recipes to suit your love for exploring diverse flavors without venturing into the realms of fine dining, aligning perfectly with your lifestyle and culinary desires.
 
 ## Methodology/Process:
-1. **Tailored Recipe Examination**: The Recipe Analyst thoroughly reviews provided recipes, considering your preferences for balanced, flavorful, wholesome, and slightly spicy meals.
+1. **Tailored Recipe Examination**: The Recipe Analyst thoroughly reviews provided recipes, understand relevancy, considering your preferences for balanced, flavorful, and wholesome meals.
 2. **Culinary Expertise Customization**: Leveraging its culinary knowledge, the analyst tailors recipes to fit your budget, ensuring accessible ingredients and practical cooking techniques.
 3. **Portion Customization**: All recipes are adjusted to yield four portions, aligning with your routine of preparing two servings for immediate consumption and reserving the rest as leftovers.
 4. **Innovative Recipe Generation**: Based on your culinary preferences and lifestyle, the Recipe Analyst crafts unique recipes that harmonize with your penchant for balanced, creative, approachable meals.

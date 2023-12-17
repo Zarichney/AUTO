@@ -10,7 +10,8 @@ from Utilities.Log import Debug, Log, colors
 
 class RecipeScaper(OpenAISchema):
     """
-    Scrapes the internet for a collection of a given recipe. Returns JSON of recipes.
+    Scrapes the internet for a collection of a given recipe. Returns JSON of recipes. 
+    Warning: not all recipes are exact search matches.
     """
 
     meal: str = Field(
@@ -22,22 +23,22 @@ class RecipeScaper(OpenAISchema):
 
         directory = "./Tools/RecipeScraper/"
         script = "recipe_scraper.py"
-        if not os.path.exists(self.directory + script):
+        if not os.path.exists(directory + script):
             Log(colors.ERROR, f"Unexpected script location: {directory + script}")
 
         # Get the path of the current Python interpreter
         python_path = sys.executable
 
         Log(colors.ACTION, f"Executing recipe scraper for: {self.meal}")
-        Debug(f"Agent called subprocess.run with:\n{[python_path, directory + script] + self.meal}")
+        Debug(f"Agent called subprocess.run with:\n{[python_path, directory + script] + [self.meal]}")
         
         try:
             execution = subprocess.run(
-                [python_path, directory + script] + self.meal,
+                [python_path, directory + script] + [self.meal],
                 text=True,
                 capture_output=True,
                 check=True,
-                timeout=10
+                timeout=100
             )
             Debug(f"{script} execution result: {execution.stdout}")
 
@@ -45,7 +46,7 @@ class RecipeScaper(OpenAISchema):
 
             # Output is expected to be a json file under the directory 'Recipes' as an array of recipes
             Debug(f"Reading json result")
-            with open(f"{directory}/Recipes/{self.meal}.json", "r") as f:
+            with open(f"Recipes/{self.meal}.json", "r") as f:
                 result = json.load(f)
                 
             recipes = result

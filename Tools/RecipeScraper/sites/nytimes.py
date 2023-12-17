@@ -1,7 +1,8 @@
 # nytimes selector module
 
 selectors = {
-    'base_url': 'https://cooking.nytimes.com/search?q=',
+    'base_url': 'https://cooking.nytimes.com',
+    'search_page': '/search?q=',
     'listed_recipe': 'ul[class*="cardgrid"] a[href*="/recipes/"]',
     'title': '.recipe h1',
     'description': '.recipe .pantry--body',

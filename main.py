@@ -54,6 +54,7 @@ while True:
     # This initiates all agents to co-operate the mission
     try:
         response = agency.operate(prompt=prompt)
+        
     except Exception as e:
         Log(colors.ERROR, f"Error in main.py: {e}")
 

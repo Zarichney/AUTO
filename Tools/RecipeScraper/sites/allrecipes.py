@@ -1,7 +1,8 @@
 # allrecipes selector module
 
 selectors = {
-    'base_url': "https://www.allrecipes.com/search?q=",
+    'base_url': "https://www.allrecipes.com",
+    'search_page': '/search?q=',
     'listed_recipe': '.search-results a[href*="/recipe/"]',
     'title': '.article-heading',
     'description': '.article-subheading',

@@ -1,7 +1,8 @@
 # bettycrocker selector module
 
 selectors = {
-    'base_url': 'https://www.bettycrocker.com/search?term=',
+    'base_url': 'https://www.bettycrocker.com',
+    'search_page': '/search?term=',
     'listed_recipe': '.searchNxResults li > div > a[href*="/recipes/"]',
     'title': '.recipeDetail h1',
     'description': '.recipeDescription',

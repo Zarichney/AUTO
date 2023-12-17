@@ -35,15 +35,14 @@ from Tools.GetDirectoryContents import GetDirectoryContents
 def get_team_instruction():
     # Build a generic team member instruction set that will be prepended to each agent's instructions
     
-    # Temporarily turning this off while RecipeAgent is working on their solo mission
-    # # Make them aware of the agents available:
-    # team_member_instructions = team_instruction
-    # team_member_instructions += "\n## Agency\n"
-    # for agent in [UserAgent, CodingAgent, QaAgent, RecipeAgent]:
-    #     team_member_instructions += f"- {agent.name}:\n" 
-    #     team_member_instructions += agent.description + "\n"
-    #     team_member_instructions += agent.services + "\n"
-    # team_member_instructions += "\n\n"
+    # Make them aware of the agents available:
+    team_member_instructions = team_instruction
+    team_member_instructions += "\n## Agency\n"
+    for agent in [UserAgent, CodingAgent, QaAgent, RecipeAgent]:
+        team_member_instructions += f"- {agent.name}:\n" 
+        team_member_instructions += agent.description + "\n"
+        team_member_instructions += agent.services + "\n"
+    team_member_instructions += "\n\n"
     
     # Make them aware of the tools available:
     team_member_instructions += tool_instruction

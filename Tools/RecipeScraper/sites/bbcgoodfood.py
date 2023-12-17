@@ -1,7 +1,8 @@
 # bbcgfood selector module
 
 selectors = {
-    'base_url': 'https://www.bbcgoodfood.com/search?q=',
+    'base_url': 'https://www.bbcgoodfood.com',
+    'search_page': '/search?q=',
     'listed_recipe': 'article a[href*="/recipes/"]',
     'title': '.recipe h1',
     'description': '.recipe .editor-content',

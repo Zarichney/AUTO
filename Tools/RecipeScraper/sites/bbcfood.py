@@ -1,8 +1,9 @@
 # bbcfood selector module
 
 # CSS selectors for scraping the data
-bbcfood_selectors = {
-    'base_url': 'https://www.bbc.co.uk/food/search?q=',
+selectors = {
+    'base_url': 'https://www.bbc.co.uk',
+    'search_page': '/food/search?q=',
     'listed_recipe': '.search-page__promo-collection a[href*="/food/recipes/"]',
     'title': 'h1.content-title__text',
     'description': '.recipe-description__text',

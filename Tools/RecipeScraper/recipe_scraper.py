@@ -62,8 +62,24 @@ def request_get(url):
     except Timeout as e:
         print(f"Timeout occurred: {e}")
     except Exception as e:
-        print(f"Error occurred: {e}")
+        print(f"Error occurred during request_get: {e}")
     return None
+
+def extract_text(parser, selector, attribute=None):
+    if not selector:
+        return None
+    
+    try:
+        element = parser.select_one(selector)
+        if element is not None:
+            if attribute:
+                return element.get(attribute)
+            else:
+                return element.get_text(strip=True)
+            
+    except Exception as e:
+        print(f"Error occurred with selector {selector} during extract_text: {e}")
+        return None
 
 # Function to parse a recipe page and extract information
 def parse_recipe(url, selectors):
@@ -77,44 +93,28 @@ def parse_recipe(url, selectors):
 
     try:
         recipe['recipe_url'] = url
-
-        if selectors['title']:
-            recipe['title'] = parser.select_one(selectors['title']).get('src', '')
-
-        if selectors['description']:
-            recipe['description'] = parser.select_one(selectors['description']).get('src', '')
-
-        if selectors['image']:
-            recipe['image_url'] = parser.select_one(selectors['image']).get('src', '')
-
-        if selectors['servings']:
-            recipe['servings'] = parser.select_one(selectors['servings']).get_text(strip=True)
-
-        if selectors['total_time']:
-            recipe['total_time'] = parser.select_one(selectors['total_time']).get_text(strip=True)
-
-        if selectors['prep_time']:
-            recipe['prep_time'] = parser.select_one(selectors['prep_time']).get_text(strip=True)
-
-        if selectors['cook_time']:
-            recipe['cook_time'] = parser.select_one(selectors['cook_time']).get_text(strip=True)
-
+        
+        recipe['title'] = extract_text(parser, selectors['title'])
+        recipe['description'] = extract_text(parser, selectors['description'])
+        recipe['image_url'] = extract_text(parser, selectors['image'], 'src')
+        recipe['servings'] = extract_text(parser, selectors['servings'])
+        recipe['prep_time'] = extract_text(parser, selectors['prep_time'])
+        recipe['cook_time'] = extract_text(parser, selectors['cook_time'])
+        recipe['total_time'] = extract_text(parser, selectors['total_time'])
         recipe['ingredients'] = [li.get_text(strip=True) for li in parser.select(selectors['ingredients'])]
-
         recipe['directions'] = [step.get_text(strip=True) for step in parser.select(selectors['directions'])]
-
-        if selectors['notes']:
-            recipe['notes'] = parser.select_one(selectors['notes']).get_text(strip=True)
+        recipe['notes'] = extract_text(parser, selectors['notes'])
 
     except Exception as e:
-        print(f"Error occurred: {e}")
+        print(f"Error occurred during parse_recipe: {e}")
         return None
 
     return recipe
 
 def scrape_recipes(food_item, selectors):
     
-    search_url = f'{selectors["base_url"]}{quote_plus(food_item)}'
+    site_url = selectors['base_url']
+    search_url = f'{site_url}{selectors["search_page"]}{quote_plus(food_item)}'
     response = request_get(search_url)
     if not response:
         return None
@@ -122,13 +122,21 @@ def scrape_recipes(food_item, selectors):
     soup = BeautifulSoup(response.text, "html.parser")
     
     # Get list of urls from the search result page
-    links = soup.select(selectors['listed_recipe'])
-    urls = [link['href'] for link in links if 'http' in link['href']]
+    selector = selectors['listed_recipe']
+    links = soup.select(selector)
+    urls = [link['href'] for link in links]
+    
+    if not urls:
+        print(f"No recipes found for {food_item} on {site_url}")
+        return None
     
     recipes = []
 
     # Iterate through search results to extract from each recipe url
     for url in urls:
+        
+        if not url.startswith(site_url):
+            url = f"{site_url}{url}"
 
         recipe = parse_recipe(url, selectors)
         if recipe:
@@ -159,21 +167,18 @@ if __name__ == "__main__":
         sys.exit()
 
     food_item = sys.argv[1]
-    # food_item = "Onion Soup Burger"
 
     all_recipes = []
     
     for site in SITE_SELECTORS:
 
-        if not SITE_SELECTORS[site]['base_url']:
+        if not SITE_SELECTORS[site]['base_url'] or not SITE_SELECTORS[site]['search_page']:
             print(f"site missing the search page url")
             continue
-
+        
         recipes = scrape_recipes(food_item, SITE_SELECTORS[site])
-        if len(recipes) > 0:
+        if recipes is not None and len(recipes) > 0:
             all_recipes.extend(recipes)
-        else:
-            print(f"Failed to retrieve recipes from site {site}.")
             
     if all_recipes and len(all_recipes) > 0:
         save_to_json(food_item, all_recipes)
