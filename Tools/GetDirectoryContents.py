@@ -4,7 +4,7 @@ import os
 import time
 from instructor import OpenAISchema
 from pydantic import Field
-from Utilities.Log import Log, colors
+from Utilities.Log import Log, type
 
 class GetDirectoryContents(OpenAISchema):
     """
@@ -20,7 +20,7 @@ class GetDirectoryContents(OpenAISchema):
 
         if not os.path.exists(self.directory):
             result = f"Directory does not exist: {self.directory}"
-            Log(colors.ERROR, result)
+            Log(type.ERROR, result)
             return result
         
         # Get a list of filenames in the directory
@@ -39,7 +39,7 @@ class GetDirectoryContents(OpenAISchema):
         file_count = len(filenames)
         listing += f"\nTotal number of files: {file_count}"
 
-        Log(colors.ACTION, f"Listing files in directory: {self.directory}.\nFile Count: {file_count}")
+        Log(type.ACTION, f"Listing files in directory: {self.directory}.\nFile Count: {file_count}")
 
         return listing
 

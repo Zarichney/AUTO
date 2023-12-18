@@ -2,12 +2,12 @@
 
 from instructor import OpenAISchema
 from pydantic import Field
-from Utilities.Log import Log, Debug, colors
+from Utilities.Log import Log, Debug, type
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from Agents.Agent import Agent
-    from Agents.Agency import Agency
+    from Agents.BaseAgent import BaseAgent
+    from Agency.Agency import Agency
 
 class Delegate(OpenAISchema):
     """
@@ -26,11 +26,11 @@ class Delegate(OpenAISchema):
 
     def run(self, agency: 'Agency'):
         
-        recipient: 'Agent' = agency.get_agent(self.recipient_name)
-        current_agent: 'Agent' = agency.active_agent
+        recipient: 'BaseAgent' = agency.get_agent(self.recipient_name)
+        current_agent: 'BaseAgent' = agency.active_agent
         
         if recipient.name == current_agent.name:
-            Log(colors.ERROR, f"{recipient.name} attempted to delegate to itself")
+            Log(type.ERROR, f"{recipient.name} attempted to delegate to itself")
             return "You cannot delegate to yourself. Supply a different agent name instead."
 
         prompt = f"# User's Prompt\n"
@@ -45,7 +45,7 @@ class Delegate(OpenAISchema):
         prompt += "According to our agency's mission, could you perform the following please:\n"
         prompt += self.instruction
 
-        Log(colors.COMMUNICATION, f"{current_agent.name} is prompting {recipient.name}:\n{self.instruction}")
+        Log(type.COMMUNICATION, f"{current_agent.name} is prompting {recipient.name}:\n{self.instruction}")
         Debug(f"{current_agent.name} is delegating to {recipient.name} with this prompt:\n{prompt}")
 
         agency.add_message(message=prompt)

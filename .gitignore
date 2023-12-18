@@ -1,7 +1,8 @@
 openai.key
 env/
 __pycache__/
-session.json
+sessions.json
+agents.json
 ai-working-dir/
 .*  # Ignore files and directories starting with a dot
 .google-cookie

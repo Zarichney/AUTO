@@ -3,7 +3,7 @@
 import os
 from instructor import OpenAISchema
 from pydantic import Field
-from Utilities.Log import Log, colors
+from Utilities.Log import Log, type
 
 
 class MoveFile(OpenAISchema):
@@ -49,5 +49,5 @@ class MoveFile(OpenAISchema):
         else:
             result = f"File moved to: {file_destination_path}"
             
-        Log(colors.RESULT, result)
+        Log(type.RESULT, result)
         return result

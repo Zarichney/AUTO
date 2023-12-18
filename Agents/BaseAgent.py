@@ -1,65 +1,92 @@
 # /Agents/Agent.py
 
 import time
-import openai
 from openai.types.beta.assistant import Assistant
-from openai.types.beta.thread import Thread
-from Utilities.Log import Debug, Log, colors
+from Utilities.Log import Debug, Log, type
 from Utilities.Config import current_model
-from Tools.Plan import Plan
-from Tools.Delegate import Delegate
-from Tools.Inquire import Inquire
-from Tools.ReadFile import ReadFile
-from Tools.ExecutePyFile import ExecutePyFile
-from Tools.GetDirectoryContents import GetDirectoryContents
-from Tools.RecipeScraper.RecipeScaper import RecipeScaper
-from Tools.CreateFile import CreateFile
-from Tools.DownloadFile import DownloadFile
-from Tools.MoveFile import MoveFile
-from Agents import RecipeAgent
+from typing import TYPE_CHECKING
+from Agency.Arsenal import ARSENAL, INTERNAL_TOOLS
+from Agency.Team import Team
 
-class Agent:
-    def __init__(self, assistant:Assistant, agency, thread:Thread):
-        if not assistant:
-            raise Exception("Assistant not supplied")
+if TYPE_CHECKING:
+    from Agency.Agency import Agency
+
+class BaseAgent:
+    def __init__(self, agency:'Agency', assistant_id=None):
         if not agency:
-            raise Exception("OpenAI Client not found.")
-        if not thread:
-            raise Exception("Thread required")
+            raise Exception("Agency not supplied")
+        
+        self.agency = agency
+            
+        self.tool_definitions = []
+        for tool in ARSENAL:
+            self.tool_definitions.append({"type": "function", "function": tool.openai_schema})
+            
+        if not hasattr(self, 'custom_instructions'):
+            Log(type.Error, f"Agent {self.name} does not have a custom_instructions attribute")
+            self.custom_instructions = ""
+            
+        # Create agent if it doesn't exist
+        if assistant_id is None:
+            
+            # Standard template for all agents
+            self.instructions = f"""
+            # Name
+            {self.name}
+
+            ## Description
+            {self.description}
+            
+            {self.custom_instructions}
+
+            ## Services You Offer: {self.services}
+            
+            {Team.get_team_instruction()}
+            """
+            
+            assistant = self.agency.client.beta.assistants.create(
+                name = self.name,
+                description = self.description,
+                instructions = self.instructions,
+                model = current_model,
+                metadata = {"services": self.services},
+                tools = self.tool_definitions
+            )
+            
+        else:
+            assistant = self.agency.client.beta.assistants.retrieve(assistant_id=assistant_id)
         
         self.assistant:Assistant = assistant
-        self.agency = agency
-        self.thread:Thread = thread
-
         self.id = self.assistant.id
-        self.name = self.assistant.name
-        self.description = self.assistant.description
         self.instructions = self.assistant.instructions
-        self.services = getattr(self.assistant, 'metadata', {}).get("services", [])
 
         self.waiting_on_response = False
         self.task_delegated = False
 
-        self.tools = []
-        self.shared_tools = [ReadFile,CreateFile,DownloadFile,MoveFile,ExecutePyFile,GetDirectoryContents]
-        self.internal_tools = [Plan,Delegate,Inquire]
-        self.setup_tools()
+        if not hasattr(self, 'toolkit'):
+            self.toolkit = []
+        self._setup_tools()
     
     def add_tool(self, tool):
-        self.tools.append(tool)
+        self.toolkit.append(tool)
 
-    def setup_tools(self):
-
-        for tool in self.shared_tools:
+    def _setup_tools(self):
+        
+        # Add communal tools
+        for tool in ARSENAL:
             self.add_tool(tool)
-
-        if self.name == RecipeAgent.name:
-           self.tools.append(RecipeScaper)
+            
+        # Add internal tools
+        for tool in INTERNAL_TOOLS:
+            # The agency contains the function call but named as "internal_tool_" + lowercase(tool_name)
+            tool_function = getattr(self.agency, "_internal_tool_" + tool.__name__.lower())
+            
+            self.add_tool(tool_function)
 
     def get_completion(self, message=None, useTools=True):
 
         client = self.agency.client
-        thread = self.thread
+        thread = self.agency.thread
 
         if self.agency.running_tool:
             Debug(f"Agent called for completion while it's currently waiting on tool usage to complete. Falling back to thread-less completion")
@@ -111,16 +138,16 @@ class Agent:
                     func = next(
                         (
                             func
-                            for func in self.tools
-                            if func.__name__.replace("internal_tool_", "").lower() == tool_call.function.name.lower()
+                            for func in self.toolkit
+                            if func.__name__.replace("_internal_tool_", "").lower() == tool_call.function.name.lower()
                         ),
                         None,
                     )
                     
                     # init tool
                     if func is None:
-                        tool_names = [func.__name__ for func in self.tools]
-                        Log(colors.ERROR, f"No tool found with name {tool_call.function.name}. Available tools: {', '.join(tool_names)}")
+                        tool_names = [func.__name__ for func in self.toolkit]
+                        Log(type.ERROR, f"No tool found with name {tool_call.function.name}. Available tools: {', '.join(tool_names)}")
                         output = f"{tool_call.function.name} is not a valid tool name. Available tools: {', '.join(tool_names)}"
                         
                     else:
@@ -138,7 +165,7 @@ class Agent:
                             Debug(f"Tool '{tool_call.function.name}' Completed. Reviewing tool output. Evaluating what to do next...")
 
                         except Exception as e:
-                            Log(colors.ERROR, f"Error occurred in function '{tool_call.function.name}': {str(e)}")
+                            Log(type.ERROR, f"Error occurred in function '{tool_call.function.name}': {str(e)}")
                             output = f"Tool '{tool_call.function.name}' failed. Error: {str(e)}"
                         self.agency.running_tool = False
 
@@ -151,7 +178,7 @@ class Agent:
 
             # error
             elif run.status == "failed":
-                Log(colors.ERROR, f"Run Failed. Error: {run.last_error}")
+                Log(type.ERROR, f"Run Failed. Error: {run.last_error}")
                 Debug(f"Run {run.id} has been cancelled")
                 return "An internal server error occurred. Try again"
 

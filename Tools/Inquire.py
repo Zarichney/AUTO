@@ -2,12 +2,12 @@
 
 from instructor import OpenAISchema
 from pydantic import Field
-from Utilities.Log import Log, Debug, colors
+from Utilities.Log import Log, Debug, type
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from Agents.Agent import Agent
-    from Agents.Agency import Agency
+    from Agents.BaseAgent import BaseAgent
+    from Agency.Agency import Agency
 
 class Inquire(OpenAISchema):
     """
@@ -32,8 +32,8 @@ class Inquire(OpenAISchema):
 
     def run(self, agency: 'Agency'):
 
-        recipient: 'Agent' = agency.get_agent(self.recipient_name)
-        current_agent: 'Agent' = agency.active_agent
+        recipient: 'BaseAgent' = agency.get_agent(self.recipient_name)
+        current_agent: 'BaseAgent' = agency.active_agent
 
         prompt = f"{recipient.name}, it is I, {current_agent.name}.\n"
         prompt += "I have an inquiry for you:\n\n"
@@ -44,12 +44,12 @@ class Inquire(OpenAISchema):
 
         prompt += "Could you share what you think step by step?\n"
 
-        Log(colors.COMMUNICATION, f"{current_agent.name} is inquiring to {recipient.name}:\n{self.prompt}")
+        Log(type.COMMUNICATION, f"{current_agent.name} is inquiring to {recipient.name}:\n{self.prompt}")
         Debug(f"{current_agent.name} used inquiry tool on {recipient.name}. Full prompt:\n{prompt}")
 
         response = recipient.get_completion(message=prompt, useTools=False)
 
-        Log(colors.COMMUNICATION, f"{recipient.name} response to {current_agent.name}:\n{response}\n_______________________")
+        Log(type.COMMUNICATION, f"{recipient.name} response to {current_agent.name}:\n{response}\n_______________________")
 
         return f"{recipient.name}:\n{response}"
 

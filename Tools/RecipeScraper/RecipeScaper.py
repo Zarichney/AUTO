@@ -6,7 +6,7 @@ import subprocess
 import sys
 from instructor import OpenAISchema
 from pydantic import Field
-from Utilities.Log import Debug, Log, colors
+from Utilities.Log import Debug, Log, type
 
 class RecipeScaper(OpenAISchema):
     """
@@ -24,12 +24,12 @@ class RecipeScaper(OpenAISchema):
         directory = "./Tools/RecipeScraper/"
         script = "recipe_scraper.py"
         if not os.path.exists(directory + script):
-            Log(colors.ERROR, f"Unexpected script location: {directory + script}")
+            Log(type.ERROR, f"Unexpected script location: {directory + script}")
 
         # Get the path of the current Python interpreter
         python_path = sys.executable
 
-        Log(colors.ACTION, f"Executing recipe scraper for: {self.meal}")
+        Log(type.ACTION, f"Executing recipe scraper for: {self.meal}")
         Debug(f"Agent called subprocess.run with:\n{[python_path, directory + script] + [self.meal]}")
         
         try:
@@ -53,21 +53,21 @@ class RecipeScaper(OpenAISchema):
 
             if not recipes:
                 result = f"No recipes were able to be scraped..."
-                Log(colors.RESULT, result)
+                Log(type.RESULT, result)
                 return result
             
-            Log(colors.RESULT, f"Analyzing {len(recipes)} recipes")
+            Log(type.RESULT, f"Analyzing {len(recipes)} recipes")
 
             # Return to agent the json as string
             return json.dumps(recipes)
 
         except subprocess.TimeoutExpired:
             result = "Execution timed out. The script may have been waiting with a prompt."
-            Log(colors.ERROR, result)
+            Log(type.ERROR, result)
             return result
 
         except subprocess.CalledProcessError as e:
             result = f"Execution error occurred: {e.stderr}"
-            Log(colors.ERROR, result)
+            Log(type.ERROR, result)
             return result
             

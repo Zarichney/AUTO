@@ -3,7 +3,7 @@
 import os
 from instructor import OpenAISchema
 from pydantic import Field
-from Utilities.Log import Log, colors
+from Utilities.Log import Log, type
 
 class CreateFile(OpenAISchema):
     """
@@ -32,17 +32,17 @@ class CreateFile(OpenAISchema):
         # If file already exists, return message
         if os.path.exists(self.directory + self.file_name):
             if self.overwrite:
-                Log(colors.ACTION, f"Overwriting file: {self.directory + self.file_name}")
+                Log(type.ACTION, f"Overwriting file: {self.directory + self.file_name}")
             else:
                 result = f"File {self.directory + self.file_name} already exists.\n"
                 result += "Specify to overwrite if you this is intended, or\n"
                 result += "increment the file version for a unique file name"
-                Log(colors.ERROR, result)
+                Log(type.ERROR, result)
                 return result
         
         # Create directory if it doesnt exist already
         if not os.path.exists(self.directory):
-            Log(colors.ACTION, f"Creating directory: {self.directory}")
+            Log(type.ACTION, f"Creating directory: {self.directory}")
             os.makedirs(self.directory)
         
         # Write file
@@ -50,5 +50,5 @@ class CreateFile(OpenAISchema):
             f.write(self.file_content)
             
         result = "File written to: " + self.file_name
-        Log(colors.RESULT, result)
+        Log(type.RESULT, result)
         return result
