@@ -5,7 +5,7 @@ import requests
 from urllib import request
 from instructor import OpenAISchema
 from pydantic import Field
-from Utilities.Log import Log, Debug, colors
+from Utilities.Log import Log, Debug, type
 
 class DownloadFile(OpenAISchema):
     """Used to download a file from the internet given a url"""
@@ -35,12 +35,12 @@ class DownloadFile(OpenAISchema):
         # If file already exists, return message
         if os.path.exists(self.working_dir + self.filename):
             if self.overwrite:
-                Log(colors.ACTION, f"Overwriting file: {self.working_dir + self.filename}")
+                Log(type.ACTION, f"Overwriting file: {self.working_dir + self.filename}")
             else:
                 result = f"File {self.working_dir + self.filename} already exists.\n"
                 result += "Specify to overwrite if you this is intended, or\n"
                 result += "increment the file version for a unique file name"
-                Log(colors.ERROR, result)
+                Log(type.ERROR, result)
                 return result
             
         try:
@@ -51,10 +51,10 @@ class DownloadFile(OpenAISchema):
                         f.write(chunk)
         except requests.exceptions.RequestException as e:
             result = f"Error downloading file: {e}"
-            Log(colors.ERROR, result)
+            Log(type.ERROR, result)
             return result
         
         result = f"{self.url} has been downloaded to '{self.working_dir + self.filename}'"
-        Log(colors.ACTION, result)
+        Log(type.ACTION, result)
         return result
 

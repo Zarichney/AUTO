@@ -4,7 +4,7 @@ import os
 from instructor import OpenAISchema
 from pydantic import Field
 
-from Utilities.Log import Log, colors
+from Utilities.Log import Log, type
 
 class ReadFile(OpenAISchema):
     """
@@ -23,10 +23,10 @@ class ReadFile(OpenAISchema):
         # If file doesnt exist, return message
         if not os.path.exists(self.directory + self.file_name):
             result = f"File {self.directory + self.file_name} does not exist."
-            Log(colors.ERROR, result)
+            Log(type.ERROR, result)
             return result
         
-        Log(colors.ACTION, f"Viewing content of file: {self.directory + self.file_name}")
+        Log(type.ACTION, f"Viewing content of file: {self.directory + self.file_name}")
         
         with open(self.directory + self.file_name, "r") as f:
             file_content = f.read()
