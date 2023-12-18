@@ -2,12 +2,12 @@
 
 from instructor import OpenAISchema
 from pydantic import Field
-from Utilities.Log import Log, Debug, colors
+from Utilities.Log import Log, Debug, type
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from Agents.Agent import Agent
-    from Agents.Agency import Agency
+    from Agents.BaseAgent import BaseAgent
+    from Agency.Agency import Agency
 
 class Plan(OpenAISchema):
     """
@@ -37,7 +37,7 @@ class Plan(OpenAISchema):
             # Add team details
             prompt += "# Team Composition: \n"
             for agent in agency.agents:
-                agent:Agent = agent
+                agent:BaseAgent = agent
                 prompt += f"## Name: \"{agent.name}\"\n"
                 prompt += f"### Description: {agent.description}\n"
                 # prompt += f"### Services: {agent.services}\n" # TODO: fix: empty array []
@@ -46,7 +46,7 @@ class Plan(OpenAISchema):
         
         # Add available tools to prompt:
         if master_plan_creation:
-            toolkit = current_agent.shared_tools + current_agent.internal_tools
+            toolkit = current_agent.shared_tools + current_agent.INTERNAL_TOOLS
         else:
             toolkit = current_agent.tools # todo i think the issue here is that its being fed the internal function
         
@@ -58,9 +58,9 @@ class Plan(OpenAISchema):
                 prompt += schema['description'] + "\n\n"
             prompt += "\n"
         except Exception as e:
-            Log(colors.ERROR, f"Error in Plan.py: {e}")
-            Log(colors.ERROR, f"Tools: {' | '.join([tool for tool in toolkit])}")
-            Log(colors.ERROR, f"master_plan_creation: {master_plan_creation}")
+            Log(type.ERROR, f"Error in Plan.py: {e}")
+            Log(type.ERROR, f"Tools: {' | '.join([tool for tool in toolkit])}")
+            Log(type.ERROR, f"master_plan_creation: {master_plan_creation}")
     
         # Instruction to review inputs and make a plan
         prompt += "# Plan Structure\n\n"
@@ -105,13 +105,13 @@ class Plan(OpenAISchema):
         Debug(f"Plan Prompt for {current_agent.name}:\n{prompt}")
         
         if master_plan_creation:
-            Log(colors.ACTION, f"Agency is generating a plan\n")
+            Log(type.ACTION, f"Agency is generating a plan\n")
         
         # todo: need to test whether its better to have the plan generated here,
         # or have this prompted returned as tool output for agent to decide what to do next
         plan = current_agent.get_completion(message=prompt, useTools=False)
 
-        Log(colors.RESULT, f"\nPlan Generated:\n{plan}\n")
+        Log(type.RESULT, f"\nPlan Generated:\n{plan}\n")
         
         return plan
         

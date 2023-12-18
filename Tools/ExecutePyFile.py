@@ -5,7 +5,7 @@ import subprocess
 import sys
 from instructor import OpenAISchema
 from pydantic import Field
-from Utilities.Log import Debug, Log, colors
+from Utilities.Log import Debug, Log, type
 import pkg_resources
 
 class ExecutePyFile(OpenAISchema):
@@ -41,16 +41,16 @@ class ExecutePyFile(OpenAISchema):
         for package in packages:
             try:
                 dist = pkg_resources.get_distribution(package)
-                Log(colors.ACTION,"{} ({}) is installed".format(dist.key, dist.version))
+                Log(type.ACTION,"{} ({}) is installed".format(dist.key, dist.version))
             except pkg_resources.DistributionNotFound:
-                Log(colors.ACTION,f"The {package} module is not installed. Attempting to install...")
+                Log(type.ACTION,f"The {package} module is not installed. Attempting to install...")
                 try:
                     subprocess.check_call([python_path, "-m", "pip", "install", package])
-                    Log(colors.ACTION,f"Successfully installed {package}.")
+                    Log(type.ACTION,f"Successfully installed {package}.")
                     
                 except subprocess.CalledProcessError as e:
                     message = f"Failed to install {package}. Error: {e.output}"
-                    Log(colors.ERROR, message)
+                    Log(type.ERROR, message)
                     return message
 
         return "All required modules are installed."
@@ -70,44 +70,38 @@ class ExecutePyFile(OpenAISchema):
         
         # If file doesnt exist, return message
         if not os.path.exists(self.directory + self.file_name):
-            Log(colors.ERROR, f"Failed attempt to exist non existing file: {self.directory + self.file_name}")
-            return f"File {self.directory + self.file_name} does not exist."
+            Log(type.ERROR, f"Cannot execute file, incorrect path invoked: {self.directory + self.file_name}")
+            return f"No file found at '{self.directory + self.file_name}'. Perhaps specify the correct path?"
+        
+        Log(type.ACTION, f"Executing {self.file_name}...")
+        Debug(f"Agent called subprocess.run with:\n{[python_path, self.directory + self.file_name] + self.parameters.split(',')}")
         
         try:
-            Log(colors.ACTION, f"Executing {self.file_name}...")
-            Debug(f"Agent called subprocess.run with:\n{[python_path, self.directory + self.file_name] + self.parameters.split(',')}")
+            execution = subprocess.run(
+                [python_path, self.directory + self.file_name] + self.parameters.split(','),
+                text=True,
+                capture_output=True,
+                check=True,
+                timeout=10
+            )
             
-            try:
-                execution = subprocess.run(
-                    [python_path, self.directory + self.file_name] + self.parameters.split(','),
-                    text=True,
-                    capture_output=True,
-                    check=True,
-                    timeout=10
-                )
-                
-                Debug(f"Agent execution cwd: {execution.cwd}")
-                Debug(f"Agent execution args: {execution.args}")
-                Debug(f"Agent execution results: {execution.stdout}")
-                Debug(f"Agent execution errors: {execution.stderr}")
-                Debug(f"Agent execution return code: {execution.returncode}")
-                
-                result = f"Execution results: {execution.stdout}"
-                Log(colors.RESULT, result)
-                return result
-
-            except subprocess.TimeoutExpired:
-                result = "Execution timed out. The script may have been waiting with a prompt."
-                Log(colors.ERROR, result)
-                return result
-
-            except subprocess.CalledProcessError as e:
-                result = f"Execution error occurred: {e.stderr}"
-                Log(colors.ERROR, result)
-                return result
+            Debug(f"Agent execution cwd: {execution.cwd}")
+            Debug(f"Agent execution args: {execution.args}")
+            Debug(f"Agent execution results: {execution.stdout}")
+            Debug(f"Agent execution errors: {execution.stderr}")
+            Debug(f"Agent execution return code: {execution.returncode}")
             
-        except subprocess.CalledProcessError as e:
-            
-            result = f"Execution error occurred: {e.stderr}"
-            Log(colors.ERROR, result)
+            result = f"Execution results: {execution.stdout}"
+            Log(type.RESULT, result)
             return result
+
+        except subprocess.TimeoutExpired:
+            result = "Execution timed out. The script may have been waiting with a prompt."
+            Log(type.ERROR, result)
+            return result
+
+        except subprocess.CalledProcessError as e:
+            result = f"Execution error occurred: {e.stderr}.\nPlease attempt to rectify"
+            Log(type.ERROR, result)
+            return result
+            
