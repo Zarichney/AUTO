@@ -185,6 +185,14 @@ class BaseAgent:
             # return assistant response
             else:
                 completion = client.beta.threads.messages.list(thread_id=thread.id)
+                
+                # todos:
+                # 1. send to agency
+                # 2. store to disk
+                # 3. use for new caching mechanism
+                # 3.1 that can work across different threads (dictionary of hashes?)
+                # 3.2 only store the prompt after 
+                
                 response = completion.data[0].content[0].text.value
 
                 if self.task_delegated:

@@ -26,6 +26,16 @@ class ReadFile(OpenAISchema):
             Log(type.ERROR, result)
             return result
         
+        # todos: 
+        # 1. upload file to openai
+        # 2. store file id somewhere in agency
+        # 3. attach file id to a new message & drop in queue
+        # 4. create new run with file id
+        # 5. return tool output?
+        # 6. wait for in progress and cancel run?
+        # 7. start the run with the file id
+        # 8. test and review
+        
         Log(type.ACTION, f"Viewing content of file: {self.directory + self.file_name}")
         
         with open(self.directory + self.file_name, "r") as f:
