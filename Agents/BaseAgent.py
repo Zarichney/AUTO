@@ -43,6 +43,7 @@ class BaseAgent:
             
             {Team.get_team_instruction()}
             """
+            # TODO: refactor this ^ to be called once during agency agent initiation and utilize the SPR agent to compress it
             
             assistant = self.agency.client.beta.assistants.create(
                 name = self.name,

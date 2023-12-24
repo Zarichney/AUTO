@@ -6,6 +6,8 @@ gpt3 = "gpt-3.5-turbo-1106"
 gpt4 = "gpt-4-1106-preview"
 current_model = gpt3
 
+USE_CONCISE_INTRUCTIONS = True
+
 session_file_name = "./sessions.json"
 agent_config_file_name = "./agents.json"
 

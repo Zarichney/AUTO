@@ -8,7 +8,7 @@ from Agency.Arsenal import ARSENAL
 
 if TYPE_CHECKING:
     from Agents import BaseAgent
-
+    
 class Team:
     
     TEAM_INSTRUCTION = """

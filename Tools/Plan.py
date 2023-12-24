@@ -14,9 +14,13 @@ class Plan(OpenAISchema):
     Generates a workflow of actionable steps.
     """
 
-    mission: str = Field(
-        ..., 
+    goal: str = Field(
+        ...,
         description="The goal that the agent would like to achieve. Will be used as the basis for planning"
+    )
+    context: str = Field(
+        ..., 
+        description="Additional considerations to be taken into account when planning"
     )
 
     def run(self, agency: 'Agency'):
@@ -27,11 +31,8 @@ class Plan(OpenAISchema):
 
         prompt = "You are being engaged to create a plan. Review the following:\n\n"
         prompt += "User's Prompt: " + agency.prompt + "\n\n"
-        if master_plan_creation == False:
-            prompt += "Your mission is to: " + self.mission + "\n\n"
-
-            prompt += "# Agency's Plan\n\n"
-            prompt += agency.plan + "\n\n"
+        prompt += f"Your goal is to: {self.goal}\n\n"
+        prompt += f"Plan considerations:\n{self.context}\n\n"
 
         if master_plan_creation:
             # Add team details
@@ -43,6 +44,8 @@ class Plan(OpenAISchema):
                 # prompt += f"### Services: {agent.services}\n" # TODO: fix: empty array []
                 prompt += "\n"
             prompt += "\n"
+        else:
+            prompt += f"# Agency's Plan\n\n{agency.plan}\n\n"
         
         # Add available tools to prompt:
         if master_plan_creation:
@@ -103,6 +106,8 @@ class Plan(OpenAISchema):
         prompt += "Think step by step. Good luck, you are great at this!\n"
             
         Debug(f"Plan Prompt for {current_agent.name}:\n{prompt}")
+        
+        # todo: use SPR writer to compress this prompt statically (aka update this file to be more concise)
         
         if master_plan_creation:
             Log(type.ACTION, f"Agency is generating a plan\n")

@@ -1,7 +1,16 @@
 # /Agents/CulinaryAgent.py
 
 from Tools.RecipeScraper.RecipeScraper import RecipeScraper
+from Utilities.Config import USE_CONCISE_INTRUCTIONS
 from .BaseAgent import BaseAgent
+
+NAME = "CulinaryAgent"
+DESCRIPTION = "Recipe Tailor"
+SERVICES = """
+- I am an expert in all food related matters
+- I scrap the internet for recipes
+- I generate recipes
+""".strip()
 
 CONCISE_INSTRUCTIONS = f"""
 1. Culinary customization: Recipe Tailor adapts recipes to individual tastes, dietary restrictions.
@@ -34,14 +43,10 @@ Recognizing the diversity in culinary preferences and the importance of dietary 
 """.strip()
 
 class CulinaryAgent(BaseAgent):
-    NAME = "CulinaryAgent"
-    DESCRIPTION = "Recipe Tailor"
-    SERVICES = """
-    - I am an expert in all food related matters
-    - I scrap the internet for recipes
-    - I generate recipes
-    """
-    CUSTOM_INSTRUCTIONS = VERBOSE_INSTRUCTIONS
+    NAME = NAME
+    DESCRIPTION = DESCRIPTION
+    SERVICES = SERVICES
+    CUSTOM_INSTRUCTIONS = CONCISE_INSTRUCTIONS if USE_CONCISE_INTRUCTIONS else VERBOSE_INSTRUCTIONS
     
     def __init__(self, agency, id=None):
         
