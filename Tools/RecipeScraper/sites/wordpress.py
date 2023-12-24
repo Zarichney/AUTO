@@ -1,0 +1,15 @@
+selectors = {
+    'base_url': "",
+    'search_page': '/?s=',
+    'listed_recipe': '.entry-title a,.archive-page__grid .archive-page-post__preview a',
+    'title': '.wprm-recipe-name',
+    'description': '.wprm-recipe-summary',
+    'image': '.wprm-recipe-image img',
+    'prep_time': '.wprm-recipe-prep_time, .wprm-recipe-prep_time + span.wprm-recipe-details-unit',
+    'cook_time': '.wprm-recipe-cook_time, .wprm-recipe-cook_time + span.wprm-recipe-details-unit',
+    'total_time': '.wprm-recipe-total_time, .wprm-recipe-total_time + span.wprm-recipe-details-unit',
+    'servings': '.wprm-recipe-servings-with-unit',
+    'ingredients': '.wprm-recipe-ingredient',
+    'directions': '.wprm-recipe-instruction-text',
+    'notes': '.wprm-recipe-notes',
+}

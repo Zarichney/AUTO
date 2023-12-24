@@ -2,6 +2,7 @@
 
 import json
 import openai
+
 from .Team import Team
 from .Session import SessionManager, Session
 from .AgentConfig import AgentConfigurationManager
@@ -9,7 +10,8 @@ from Agents import UserAgent
 from Tools.Plan import Plan
 from Tools.Delegate import Delegate
 from Tools.Inquire import Inquire
-from Utilities.Config import GetClient, current_model, session_file_name
+from Tools.RecipeScraper.RecipeScraper import RecipeScraper
+from Utilities.Config import GetClient, current_model
 from Utilities.Log import Log, Debug, type
 from typing import TYPE_CHECKING
 
@@ -130,6 +132,11 @@ class Agency:
             chain_of_thought=chain_of_thought,
         ).run(agency=self)
 
+    def _internal_tool_recipescraper(self, meal):
+        return RecipeScraper(
+            meal=meal,
+        ).run(agency=self)
+
     # main method to get the agency to work the prompt
     def complete(
         self, mission_prompt, single_agent, stop_word="exit", continue_phrase=None
@@ -164,11 +171,11 @@ class Agency:
             message = f"Waiting for reply from user. Or type '{stop_word}'"
             if continue_phrase is not None:
                 message += f" to {continue_phrase}"
-            message += ":\n\n> "
+            message += ":\n\n"
 
             Log(type.PROMPT, message)
 
-            prompt = input()
+            prompt = input("> ")
 
             if prompt.lower() == stop_word.lower():
                 if continue_phrase is not None:

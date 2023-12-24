@@ -9,8 +9,9 @@ from Tools.GetDirectoryContents import GetDirectoryContents
 from Tools.Plan import Plan
 from Tools.Delegate import Delegate
 from Tools.Inquire import Inquire
+from Tools.RecipeScraper.RecipeScraper import RecipeScraper
 
-INTERNAL_TOOLS = [Plan, Delegate, Inquire]
+INTERNAL_TOOLS = [Plan, Delegate, Inquire, RecipeScraper]
 ARSENAL = [
     ReadFile,
     CreateFile,

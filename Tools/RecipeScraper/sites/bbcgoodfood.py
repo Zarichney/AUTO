@@ -3,7 +3,7 @@
 selectors = {
     'base_url': 'https://www.bbcgoodfood.com',
     'search_page': '/search?q=',
-    'listed_recipe': 'article a[href*="/recipes/"]',
+    'listed_recipe': 'article .card__content a[href*="/recipes/"]',
     'title': '.recipe h1',
     'description': '.recipe .editor-content',
     'image': '.recipe picture img',

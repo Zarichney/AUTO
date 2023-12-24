@@ -5,9 +5,9 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import quote_plus
 from requests.exceptions import ConnectionError, HTTPError, Timeout
-from sites import allrecipes, eatingwell, nytimes, bbcfood, bbcgoodfood, bettycrocker, bigoven
+from sites import allrecipes, eatingwell, nytimes, bbcfood, bbcgoodfood, bettycrocker, bigoven, inspiretraveleat, wordpress, iowagirleats
 
-MAX_NUM_RECIPES_PER_SITE = 5
+MAX_NUM_RECIPES_PER_SITE = 3
 OUTPUT_DIRECTORY_NAME = "Recipes"
 
 SITE_SELECTORS = {
@@ -18,6 +18,12 @@ SITE_SELECTORS = {
     'bbcgoodfood': bbcgoodfood.selectors,
     'bettycrocker': bettycrocker.selectors,
     'bigoven': bigoven.selectors,
+    'inspiretraveleat': inspiretraveleat.selectors,
+    'kaleforniakravings': wordpress.selectors,
+    "4sonrus": wordpress.selectors,
+    "kitchenconfidante": wordpress.selectors,
+    "simplykitch": wordpress.selectors,
+    "iowagirleats": iowagirleats.selectors,
 }
 
 # JSON format for storing the recipe data
@@ -96,7 +102,9 @@ def parse_recipe(url, selectors):
         
         recipe['title'] = extract_text(parser, selectors['title'])
         recipe['description'] = extract_text(parser, selectors['description'])
-        recipe['image_url'] = extract_text(parser, selectors['image'], 'src')
+        recipe['image_url'] = extract_text(parser, selectors['image'], 'data-lazy-src')
+        if not recipe['image_url']:
+            recipe['image_url'] = extract_text(parser, selectors['image'], 'src')
         recipe['servings'] = extract_text(parser, selectors['servings'])
         recipe['prep_time'] = extract_text(parser, selectors['prep_time'])
         recipe['cook_time'] = extract_text(parser, selectors['cook_time'])
@@ -111,9 +119,15 @@ def parse_recipe(url, selectors):
 
     return recipe
 
-def scrape_recipes(food_item, selectors):
+def scrape_recipes(site, food_item):
     
+    selectors = SITE_SELECTORS[site]
     site_url = selectors['base_url']
+    
+    # wordpress sites dont have the base_url set, build it using the site
+    if not site_url:
+        site_url = f"https://{site}.com"
+    
     search_url = f'{site_url}{selectors["search_page"]}{quote_plus(food_item)}'
     response = request_get(search_url)
     if not response:
@@ -130,12 +144,16 @@ def scrape_recipes(food_item, selectors):
         print(f"No recipes found for {food_item} on {site_url}")
         return None
     
+    # remove any duplicate hrefs
+    urls = list(dict.fromkeys(urls))
+    
     recipes = []
 
     # Iterate through search results to extract from each recipe url
     for url in urls:
         
-        if not url.startswith(site_url):
+        # Append domain when url is relative
+        if not url.startswith('https://'):
             url = f"{site_url}{url}"
 
         recipe = parse_recipe(url, selectors)
@@ -172,11 +190,11 @@ if __name__ == "__main__":
     
     for site in SITE_SELECTORS:
 
-        if not SITE_SELECTORS[site]['base_url'] or not SITE_SELECTORS[site]['search_page']:
+        if not SITE_SELECTORS[site]['search_page']:
             print(f"site missing the search page url")
             continue
         
-        recipes = scrape_recipes(food_item, SITE_SELECTORS[site])
+        recipes = scrape_recipes(site, food_item)
         if recipes is not None and len(recipes) > 0:
             all_recipes.extend(recipes)
             
