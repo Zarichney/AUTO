@@ -46,7 +46,12 @@ class Inquire(OpenAISchema):
 
         Log(type.COMMUNICATION, f"{current_agent.name} is inquiring to {recipient.name}:\n{self.prompt}")
         Debug(f"{current_agent.name} used inquiry tool on {recipient.name}. Full prompt:\n{prompt}")
-
+        # todo: this needs rework or some design considerations
+        # the problem is that this message does not include the history
+        # and the response also dont get added to the thread
+        # so this tool doesnt really help in providing clarification information to the agencys mission
+        # only helps the current agent with its tool usage
+        # todo: test off this is more effective if the message is dropped and the active agent is switched 
         response = recipient.get_completion(message=prompt, useTools=False)
 
         Log(type.COMMUNICATION, f"{recipient.name} response to {current_agent.name}:\n{response}\n_______________________")
