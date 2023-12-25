@@ -1,4 +1,4 @@
-# /Tools/RecipeScraper/RecipeScraper.py
+I'm# /Tools/RecipeScraper/RecipeScraper.py
 
 import json
 import os
@@ -96,6 +96,7 @@ class RecipeScraper(OpenAISchema):
             messages=[
                 {"role": "system", "content": instruction},
                 {"role": "user", "content": f"Recipe Name: {self.recipe}"},
+                # todo: make assistant injest file instead. create new thread, dispose after tool usage
                 {"role": "user", "content": f"Recipes: {json.dumps(recipes, indent=2)}"}
             ]
         )
