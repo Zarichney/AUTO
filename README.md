@@ -119,3 +119,18 @@ AUTO Agency's tools are available at the disposal of each agents. They decide wh
 
 ### Agent-Specific Tools
 - **RecipeScraper** (Culinary Agent): Scrapes the internet for recipes, returning a JSON array of relevant results.
+
+## Agency
+
+### Session Management
+- Ability to automatically restore the conversational state simply by using the same initial prompt
+
+### Capabilitity Roadmap
+- Continuous introduction of new agents & tools
+- API system integration (at the agency level, agents can perform this)
+- Persistent storage for messages (prompts, responses & tool output)
+- Built-in Cache (reduce cost on repeated tasks & conversations)
+- Robust execution of quality-expected deliverables (such as a complete cookbook)
+- File management enhancements (introduce chunking to handle large files)
+- Long term memory (implementation of vector database)
+- User interface
