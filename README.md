@@ -1,4 +1,4 @@
-# AUTO Agency (Autonomous Utilization and Task Organization)
+`# AUTO Agency (Autonomous Utilization and Task Organization)
 
 ## Project Description
 
@@ -67,22 +67,27 @@ To start using AUTO Agency, you can:
 
 Here are some examples of how you can use AUTO Agency:
 
-1. **Stock Comparison**:
+1. **Custom utilities**:
    
    ```bash
-   python main.py "compare Google and Apple stocks over the past week"
+   python main.py "show me a stock comparison of Google and Apple over the past week"
    ```
 
-2. **Create a Local File**:
+2. **Local File Management**:
    
    ```bash
-   python main.py "create a file with content from the OpenAI Wikipedia page"
+   python main.py "create a markdown file with content from the OpenAI Wikipedia page"
    ```
 
-3. **Draft a Document**:
+3. **Document Creation**:
    
    ```bash
-   python main.py "draft a recipe for a chocolate cake"
+   python main.py "draft a recipe for afredo pasta (4 servings) inspired by real recipes"
+   ```
+
+4. **Run pre-written missions**:
+   ```bash
+   python -m Demos.cookbook
    ```
 
 Remember, AUTO Agency is designed to understand and execute a wide range of tasks, so feel free to experiment with different prompts!
