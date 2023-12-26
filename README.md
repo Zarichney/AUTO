@@ -122,6 +122,19 @@ AUTO Agency's tools are available at the disposal of each agents. They decide wh
 
 ## Agency
 
+### OpenAI API abstraction
+- This project leverages the OpenAI complete & assistant APIs
+- Users requires no knowledge of how the AI are powered and how they execute
+- Developers can utilize easy to use classes & functions to facilitate the API heavy-lifting
+
+### Team & Tool self-awareness
+- Each agent are informed on their roles & responsibilities, their teammates' specialties and the tools at everyone's disposal
+- Enabling awareness enables automatic orchestration
+- No need to get involved in the how, allow the agents to self organize
+
+### Capability Scaling
+- The idea is that by simply introducing more agents and more tools, the more capable the agency will be at handling even more complex tasks
+
 ### Session Management
 - Ability to automatically restore the conversational state simply by using the same initial prompt
 
