@@ -1,12 +1,12 @@
 # /Agents/Agent.py
 
+import textwrap
 import time
 from openai.types.beta.assistant import Assistant
 from Utilities.Log import Debug, Log, type
 from Utilities.Config import current_model
 from typing import TYPE_CHECKING
-from Agency.Arsenal import ARSENAL, INTERNAL_TOOLS
-from Agency.Team import Team
+from Agency.Arsenal import SHARED_TOOLS
 
 if TYPE_CHECKING:
     from Agency.Agency import Agency
@@ -19,7 +19,11 @@ class BaseAgent:
         self.agency = agency
             
         self.tool_definitions = []
-        for tool in ARSENAL:
+        if not hasattr(self, 'custom_tools'):
+            self.custom_tools = []
+        for tool in self.custom_tools:
+            self.tool_definitions.append({"type": "function", "function": tool.openai_schema})
+        for tool in SHARED_TOOLS:
             self.tool_definitions.append({"type": "function", "function": tool.openai_schema})
             
         if not hasattr(self, 'custom_instructions'):
@@ -30,7 +34,7 @@ class BaseAgent:
         if assistant_id is None:
             
             # Standard template for all agents
-            self.instructions = f"""
+            self.instructions = textwrap.dedent(f"""
             # Name
             {self.name}
 
@@ -39,11 +43,11 @@ class BaseAgent:
             
             {self.custom_instructions}
 
-            ## Services You Offer: {self.services}
+            ## Services You Offer:
+            {self.services}
             
-            {Team.get_team_instruction()}
-            """
-            # TODO: refactor this ^ to be called once during agency agent initiation and utilize the SPR agent to compress it
+            {self.agency.get_team_instruction()}
+            """).strip()
             
             assistant = self.agency.client.beta.assistants.create(
                 name = self.name,
@@ -64,25 +68,20 @@ class BaseAgent:
         self.waiting_on_response = False
         self.task_delegated = False
 
-        if not hasattr(self, 'toolkit'):
-            self.toolkit = []
+        self.toolkit = []
         self._setup_tools()
     
     def add_tool(self, tool):
         self.toolkit.append(tool)
 
     def _setup_tools(self):
-        
-        # Add communal tools
-        for tool in ARSENAL:
+        # Add custom tools
+        for tool in self.custom_tools:
             self.add_tool(tool)
             
-        # Add internal tools
-        for tool in INTERNAL_TOOLS:
-            # The agency contains the function call but named as "internal_tool_" + lowercase(tool_name)
-            tool_function = getattr(self.agency, "_internal_tool_" + tool.__name__.lower())
-            
-            self.add_tool(tool_function)
+        # Add communal tools
+        for tool in SHARED_TOOLS:
+            self.add_tool(tool)
 
     def get_completion(self, message=None, useTools=True):
 
@@ -129,50 +128,49 @@ class BaseAgent:
                 run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
                 time.sleep(1)
 
-            # function execution
+            # Assistant requested to have a tool executed
             if run.status == "requires_action":
+                
                 tool_calls = run.required_action.submit_tool_outputs.tool_calls
                 tool_outputs = []
+                
+                if len(tool_calls) > 1:
+                    Debug(f"{self.name} is invoking {len(tool_calls)} tool calls")
+                
                 for tool_call in tool_calls:
-                    Debug(f"{self.name} is invoking tool: {tool_call.function.name}")
-                    # Find the tool to be executed
-                    func = next(
-                        (
-                            func
-                            for func in self.toolkit
-                            if func.__name__.replace("_internal_tool_", "").lower() == tool_call.function.name.lower()
-                        ),
-                        None,
-                    )
                     
-                    # init tool
-                    if func is None:
+                    tool_name = tool_call.function.name
+                    Debug(f"{self.name} is invoking tool: {tool_name}")
+                    
+                    # Find the tool to be executed
+                    tool_function = next((func for func in self.toolkit if func.__name__ == tool_name), None)
+                    
+                    if tool_function is None:
                         tool_names = [func.__name__ for func in self.toolkit]
-                        Log(type.ERROR, f"No tool found with name {tool_call.function.name}. Available tools: {', '.join(tool_names)}")
-                        output = f"{tool_call.function.name} is not a valid tool name. Available tools: {', '.join(tool_names)}"
+                        Log(type.ERROR, f"No tool found with name {tool_name}. Available tools: {', '.join(tool_names)}")
+                        output = f"{tool_name} is not a valid tool name. Available tools: {', '.join(tool_names)}"
                         
                     else:
                         self.agency.running_tool = True
                         try:
-                            
                             arguments = tool_call.function.arguments.replace('true', 'True').replace('false', 'False')
-                            tool = func(**eval(arguments))
                             
-                            if isinstance(tool, str):
-                                output = tool
-                            else:
-                                output = tool.run()
-
-                            Debug(f"Tool '{tool_call.function.name}' Completed. Reviewing tool output. Evaluating what to do next...")
+                            output = tool_function(**eval(arguments)).run(agency=self.agency)
+                            
+                            Debug(f"Tool '{tool_name}' Completed.")
 
                         except Exception as e:
-                            Log(type.ERROR, f"Error occurred in function '{tool_call.function.name}': {str(e)}")
-                            output = f"Tool '{tool_call.function.name}' failed. Error: {str(e)}"
+                            Log(type.ERROR, f"Error occurred in function '{tool_name}': {str(e)}")
+                            output = f"Tool '{tool_name}' failed. Error: {str(e)}"
                         self.agency.running_tool = False
 
                     tool_outputs.append({"tool_call_id": tool_call.id, "output": output})
 
-                # submit tool outputs
+                if len(tool_calls) == 1:
+                    Debug(f"Submitting tool output")
+                else:
+                    Debug(f"Submitting {len(tool_calls)} tool outputs")
+                    
                 run = client.beta.threads.runs.submit_tool_outputs(
                     thread_id=thread.id, run_id=run.id, tool_outputs=tool_outputs
                 )

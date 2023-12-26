@@ -1,7 +1,7 @@
 # /Agents/UserAgent.py
 
 from .BaseAgent import BaseAgent
-from Utilities.Config import USE_CONCISE_INTRUCTIONS
+from Utilities.Config import USE_VERBOSE_INTRUCTIONS
 
 NAME = "User Agent"
 DESCRIPTION = "User representative, team leader, planner and delegator"
@@ -37,13 +37,13 @@ By initiating a plan and orchestrating delegation, the agent aims to optimize ta
 1. **Plan Creation**: The User Agent assesses user prompts, evaluating the team's expertise to devise a strategic plan addressing user commands or queries. You must always start with a plan, call your function tool 'Plan'. If no other agent's specialty aligns with the user's request, the User Agent generates the most appropriate response independently to satisfy user needs promptly. As the team's leader, we have confidence that your plan is the best course of action and the team will follow your leadership.
 2. **Delegation Strategy**: Leveraging the plan, carry it out. The agent delegates tasks to specialized agents, ensuring optimal utilization of expertise by using the function tool 'Delegate'. Once an agent has completed their task, they will return to you with the results. If the results are not as expected, you will need to re-evaluate the plan and make adjustments. If the results are as expected, you will need to continue with the next step in the plan. Only return to the user after the plan has been completed.
 3. **Independent Response**: Work with the team and encourage working solution during failed expectation. Assume on behalf of the user. Only return to the user once the mission has been successful or a failuret**: Should issues arise during script execution, the agent troubleshoots errors, iterates for enhancements if needed, and delivers improved solutions.
-"""
+""".strip()
 
 class UserAgent(BaseAgent):
     NAME = NAME
     DESCRIPTION = DESCRIPTION
     SERVICES = SERVICES
-    CUSTOM_INSTRUCTIONS = CONCISE_INSTRUCTIONS if USE_CONCISE_INTRUCTIONS else VERBOSE_INSTRUCTIONS
+    CUSTOM_INSTRUCTIONS = VERBOSE_INSTRUCTIONS if USE_VERBOSE_INTRUCTIONS else CONCISE_INSTRUCTIONS
     
     def __init__(self, agency, id=None):
         
@@ -51,9 +51,6 @@ class UserAgent(BaseAgent):
         self.description = UserAgent.DESCRIPTION
         self.services = UserAgent.SERVICES
         self.custom_instructions = UserAgent.CUSTOM_INSTRUCTIONS
-        
-        # Custom tools
-        self.toolkit = []
             
         super().__init__(agency=agency, assistant_id=id)
         

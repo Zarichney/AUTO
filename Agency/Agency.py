@@ -6,18 +6,13 @@ import openai
 from .Team import Team
 from .Session import SessionManager, Session
 from .AgentConfig import AgentConfigurationManager
-from Agents import UserAgent
-from Tools.Plan import Plan
-from Tools.Delegate import Delegate
-from Tools.Inquire import Inquire
-from Tools.RecipeScraper.RecipeScraper import RecipeScraper
+from Agents import SprAgent, UserAgent
 from Utilities.Config import GetClient, current_model
 from Utilities.Log import Log, Debug, type
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from Agents import BaseAgent
-
+    from Agents.BaseAgent import BaseAgent
 
 class Agency:
     def __init__(
@@ -26,8 +21,11 @@ class Agency:
         self.client: openai = GetClient()
         self.thread = None
         self.agents: ["BaseAgent"] = []
+        
+        self.team_instructions = None
         self.plan = None
         self.prompt = prompt
+        
         self.active_agent: 'BaseAgent' = None
         self.running_tool = False
         self.message_queue = []
@@ -39,25 +37,18 @@ class Agency:
         self.agents_manager: AgentConfigurationManager = AgentConfigurationManager(agency=self, rebuild_agents=rebuild_agents)
         self.agents = self.agents_manager.agents
         
-    @staticmethod
-    def get_team_instruction():
-        return Team.get_team_instruction()
-
     def get_agent(self, name) -> "BaseAgent":
+        
         for agent in self.agents:
             if agent.name == name:
                 return agent
 
         # An invalid name was supplied, use GPT to find the correct agent name
-        Log(
-            type.ERROR,
-            f"Agent named '{name}' not found in agency. Engaging fall back...",
-        )
+        Log(type.ERROR, f"Agent named '{name}' not found in agency. Engaging fall back...")
 
         list_of_agent_names = [agent.name for agent in self.agents]
         Log(type.ERROR, f"Actual agent names: {', '.join(list_of_agent_names)}")
 
-        # todo use the json output for better reliability
         completion = self.client.chat.completions.create(
             model=current_model,
             response_format={"type": "json_object"},
@@ -65,14 +56,16 @@ class Agency:
                 {
                     "role": "system",
                     "content": """
-                        Solve this problem: The prompt will be provide you a list of valid agent names and an invalid name. 
-                        The goal is to identify the closest resembling valid agent name.
-                        Respond using the following JSON format: {"Name": "User agent"}
-                    """,
+                        Task: Match closest valid agent name.
+                        Input: Valid names, one invalid.
+                        Output: JSON with closest match.
+                        Method: String similarity analysis.
+                        JSON Format: {"Name": "Closest valid agent"}.
+                    """.strip(),
                 },
                 {
                     "role": "user",
-                    "content": f"List of agents: {', '.join(list_of_agent_names)}\nWhat is the intended valid agent name for:\n{name}",
+                    "content": f"Valid names: {', '.join(list_of_agent_names)}.\nInvalid name:{name}",
                 },
             ],
         )
@@ -84,10 +77,7 @@ class Agency:
             if agent.name == actualAgentName:
                 return agent
 
-        Log(
-            type.ERROR,
-            f"Agent could still not be found in agency... Returning user agent",
-        )
+        Log(type.ERROR, f"Requested Agent could still not be found in agency... Returning user agent")
         return self.get_agent(UserAgent.NAME)
 
     def UpdatePlan(self, plan):
@@ -113,29 +103,28 @@ class Agency:
             role="user",
             content=message,
         )
-
-    def _internal_tool_delegate(self, recipient_name, instruction):
-        return Delegate(
-            recipient_name=recipient_name,
-            instruction=instruction,
-        ).run(agency=self)
-
-    def _internal_tool_plan(self, mission):
-        return Plan(
-            mission=mission,
-        ).run(agency=self)
-
-    def _internal_tool_inquire(self, recipient_name, prompt, chain_of_thought):
-        return Inquire(
-            recipient_name=recipient_name,
-            prompt=prompt,
-            chain_of_thought=chain_of_thought,
-        ).run(agency=self)
-
-    def _internal_tool_recipescraper(self, meal):
-        return RecipeScraper(
-            meal=meal,
-        ).run(agency=self)
+        
+    def get_team_instruction(self):
+        if self.team_instructions is None:
+            
+            verbose_team_instructions = Team.build_agents_list_and_arsenal()
+            Debug(f"Verbose Team instructions:\n{verbose_team_instructions}")
+            
+            # Use SPR Writer to compress the instructions
+            completion = self.client.chat.completions.create(
+                model=current_model,
+                messages=[
+                    {"role": "system", "content": SprAgent.INSTRUCTIONS},
+                    {"role": "user", "content": verbose_team_instructions},
+                ],
+            )
+            
+            compressed_team_instructions = completion.choices[0].message.content
+            Debug(f"Concise Team instructions:\n{compressed_team_instructions}")
+            
+            self.team_instructions = compressed_team_instructions
+            
+        return self.team_instructions
 
     # main method to get the agency to work the prompt
     def complete(

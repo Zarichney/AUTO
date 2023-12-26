@@ -5,8 +5,13 @@ import subprocess
 import sys
 from instructor import OpenAISchema
 from pydantic import Field
+from Utilities.Config import WORKING_DIRECTORY
 from Utilities.Log import Debug, Log, type
 import pkg_resources
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from Agency.Agency import Agency
 
 class ExecutePyFile(OpenAISchema):
     """
@@ -21,7 +26,7 @@ class ExecutePyFile(OpenAISchema):
         description="The path to the .py file to be executed."
     )
     directory: str = Field(
-        default="./ai-working-dir/",
+        default=WORKING_DIRECTORY,
         description="The path to the directory where to file is stored. Path can be absolute or relative."
     )
     parameters: str = Field(
@@ -55,7 +60,7 @@ class ExecutePyFile(OpenAISchema):
 
         return "All required modules are installed."
 
-    def run(self):
+    def run(self, agency: 'Agency'):
         """Executes a Python script at the given file path and captures its output and errors."""
             
         # Get the path of the current Python interpreter

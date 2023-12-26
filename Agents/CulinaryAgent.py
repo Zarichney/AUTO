@@ -1,7 +1,7 @@
 # /Agents/CulinaryAgent.py
 
 from Tools.RecipeScraper.RecipeScraper import RecipeScraper
-from Utilities.Config import USE_CONCISE_INTRUCTIONS
+from Utilities.Config import USE_VERBOSE_INTRUCTIONS
 from .BaseAgent import BaseAgent
 
 NAME = "CulinaryAgent"
@@ -46,7 +46,7 @@ class CulinaryAgent(BaseAgent):
     NAME = NAME
     DESCRIPTION = DESCRIPTION
     SERVICES = SERVICES
-    CUSTOM_INSTRUCTIONS = CONCISE_INSTRUCTIONS if USE_CONCISE_INTRUCTIONS else VERBOSE_INSTRUCTIONS
+    CUSTOM_INSTRUCTIONS = VERBOSE_INSTRUCTIONS if USE_VERBOSE_INTRUCTIONS else CONCISE_INSTRUCTIONS
     
     def __init__(self, agency, id=None):
         
@@ -54,8 +54,6 @@ class CulinaryAgent(BaseAgent):
         self.description = CulinaryAgent.DESCRIPTION
         self.services = CulinaryAgent.SERVICES
         self.custom_instructions = CulinaryAgent.CUSTOM_INSTRUCTIONS
-        
-        # Custom tools
-        self.toolkit = [RecipeScraper]
+        self.custom_tools = [RecipeScraper]
             
         super().__init__(agency=agency, assistant_id=id)

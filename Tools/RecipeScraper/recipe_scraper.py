@@ -5,10 +5,15 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import quote_plus
 from requests.exceptions import ConnectionError, HTTPError, Timeout
+import sys
+import os
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.append(project_root)
+from Utilities.Config import WORKING_DIRECTORY
 from sites import allrecipes, eatingwell, nytimes, bbcfood, bbcgoodfood, bettycrocker, bigoven, inspiretraveleat, wordpress, iowagirleats
 
 MAX_NUM_RECIPES_PER_SITE = 3
-OUTPUT_DIRECTORY_NAME = "Recipes"
+OUTPUT_DIRECTORY_NAME = WORKING_DIRECTORY + "Recipes"
 
 SITE_SELECTORS = {
     'allrecipes': allrecipes.selectors,

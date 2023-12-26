@@ -12,6 +12,6 @@ selectors = {
     'total_time': '.wprm-recipe-time-container:nth-child(3) .wprm-recipe-time',
     'servings': '.wprm-recipe-servings-with-unit',
     'ingredients': '.wprm-recipe-ingredients-container li',
-    'directions': 'li.wprm-recipe-instructio',
+    'directions': 'li.wprm-recipe-instruction',
     'notes': '',
 }

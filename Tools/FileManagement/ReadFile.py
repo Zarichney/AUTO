@@ -3,8 +3,12 @@
 import os
 from instructor import OpenAISchema
 from pydantic import Field
-
+from Utilities.Config import WORKING_DIRECTORY
 from Utilities.Log import Log, type
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from Agency.Agency import Agency
 
 class ReadFile(OpenAISchema):
     """
@@ -14,11 +18,11 @@ class ReadFile(OpenAISchema):
         ..., description="The name of the file including the extension"
     )
     directory: str = Field(
-        default="./ai-working-dir/",
+        default=WORKING_DIRECTORY,
         description="The path to the directory where to file is stored. Path can be absolute or relative."
     )
 
-    def run(self):
+    def run(self, agency: 'Agency'):
         
         # If file doesnt exist, return message
         if not os.path.exists(self.directory + self.file_name):

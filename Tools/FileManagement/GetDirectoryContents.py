@@ -5,6 +5,10 @@ import time
 from instructor import OpenAISchema
 from pydantic import Field
 from Utilities.Log import Log, type
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from Agency.Agency import Agency
 
 class GetDirectoryContents(OpenAISchema):
     """
@@ -16,7 +20,7 @@ class GetDirectoryContents(OpenAISchema):
         description="The path to the directory to be read"
     )
 
-    def run(self):
+    def run(self, agency: 'Agency'):
 
         if not os.path.exists(self.directory):
             result = f"Directory does not exist: {self.directory}"

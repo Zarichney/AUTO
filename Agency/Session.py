@@ -6,7 +6,6 @@ import openai
 from Utilities.Config import session_file_name
 from Utilities.Log import Debug
 
-
 class Session:
     def __init__(self, client, prompt, thread_id=None):
         self.prompt: str = prompt
@@ -17,10 +16,7 @@ class Session:
         else:
             self._retrieve_thread(thread_id)
             
-    def delete(self):
-        if self.thread is None:
-            return
-        
+    def _cancel_runs(self):
         try:
             # Cancel any runs from a previous session
             runs = self.client.beta.threads.runs.list(self.thread.id).data
@@ -36,6 +32,12 @@ class Session:
         except Exception:
             Debug(f"Failed to cancel runs for OpenAI thread_id {self.thread.id}")
             pass
+            
+    def delete(self):
+        if self.thread is None:
+            return
+        
+        self._cancel_runs()
         
         try:
             self.client.beta.threads.delete(self.thread.id)
@@ -51,6 +53,7 @@ class Session:
         
     def _retrieve_thread(self,thread_id):
         self.thread = self.client.beta.threads.retrieve(thread_id)
+        self._cancel_runs()
 
     def to_dict(self):
         return {

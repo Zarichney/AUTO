@@ -3,7 +3,12 @@
 import os
 from instructor import OpenAISchema
 from pydantic import Field
+from Utilities.Config import WORKING_DIRECTORY
 from Utilities.Log import Log, type
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from Agency.Agency import Agency
 
 
 class MoveFile(OpenAISchema):
@@ -20,7 +25,7 @@ class MoveFile(OpenAISchema):
         description="Optional: The new name of the file (including the extension) to be named at the new destination. If left blank, the file will be moved with the same name.",
     )
     directory: str = Field(
-        default="./ai-working-dir/",
+        default=WORKING_DIRECTORY,
         description="Optional: The path to the directory where the file is currently stored. Path can be absolute or relative.",
     )
     destination: str = Field(
@@ -28,7 +33,7 @@ class MoveFile(OpenAISchema):
         description="Optional: The path to the directory where to file is be moved to. Path can be absolute or relative."
     )
 
-    def run(self):
+    def run(self, agency: 'Agency'):
         
         # If file doesnt exist, return message
         if not os.path.exists(self.directory + self.file_name):

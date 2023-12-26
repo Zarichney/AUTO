@@ -4,9 +4,11 @@ from openai import OpenAI
 
 gpt3 = "gpt-3.5-turbo-1106"
 gpt4 = "gpt-4-1106-preview"
-current_model = gpt3
+current_model = gpt4
 
-USE_CONCISE_INTRUCTIONS = True
+USE_VERBOSE_INTRUCTIONS = False
+
+WORKING_DIRECTORY = "./ai-working-dir/"
 
 session_file_name = "./sessions.json"
 agent_config_file_name = "./agents.json"

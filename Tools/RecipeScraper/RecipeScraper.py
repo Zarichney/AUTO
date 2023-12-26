@@ -1,4 +1,4 @@
-I'm# /Tools/RecipeScraper/RecipeScraper.py
+# /Tools/RecipeScraper/RecipeScraper.py
 
 import json
 import os
@@ -7,7 +7,11 @@ import sys
 from instructor import OpenAISchema
 from pydantic import Field
 from Utilities.Log import Debug, Log, type
-from Utilities.Config import current_model
+from Utilities.Config import WORKING_DIRECTORY, gpt4
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from Agency.Agency import Agency
 
 class RecipeScraper(OpenAISchema):
     """
@@ -21,29 +25,32 @@ class RecipeScraper(OpenAISchema):
         description="The name of the recipe to search the internet for"
     )
 
-    def run(self, agency):
+    def run(self, agency: 'Agency'):
 
-        directory = "./Tools/RecipeScraper/"
+        script_directory = "./Tools/RecipeScraper/"
+        script_output_directory = "Recipes"
+        script_output_path = WORKING_DIRECTORY + script_output_directory
         script = "recipe_scraper.py"
-        if not os.path.exists(directory + script):
-            Log(type.ERROR, f"Unexpected script location: {directory + script}")
+        script_path = script_directory + script
+        if not os.path.exists(script_path):
+            Log(type.ERROR, f"Unexpected script location: {script_path}")
 
         # Get the path of the current Python interpreter
         python_path = sys.executable
 
         Log(type.ACTION, f"Executing recipe scraper for: {self.recipe}")
-        Debug(f"Agent called subprocess.run with:\n{[python_path, directory + script] + [self.recipe]}")
+        Debug(f"Agent called subprocess.run with:\n{[python_path, script_path] + [self.recipe]}")
         
         try:
             # Step 1: run python scraper script to scrawl the internet for related recipes
             execution = subprocess.run(
-                [python_path, directory + script] + [self.recipe],
+                [python_path, script_path] + [self.recipe],
                 text=True,
                 capture_output=True,
                 check=True,
                 timeout=100
             )
-            Debug(f"{script} execution result: {execution.stdout}")
+            Debug(f"{script} execution result:\n\n{execution.stdout}")
             
         except subprocess.TimeoutExpired:
             result = "Execution timed out. The script may have been waiting with a prompt."
@@ -57,10 +64,14 @@ class RecipeScraper(OpenAISchema):
 
         recipes = []
 
-        # Output is expected to be a json file under the directory 'Recipes' as an array of recipes
+        # Output is expected to be a json file under the script_directory 'Recipes' as an array of recipes
         Debug(f"Reading json result")
-        with open(f"Recipes/{self.recipe}.json", "r") as f:
+        with open(f"{script_output_path}/{self.recipe}.json", "r") as f:
             result = json.load(f)
+            
+        # Make copy of file for archiving reasons
+        with open(f"{script_output_path}/{self.recipe}_scrapped.json", "w") as f:
+            json.dump(result, f, indent=2)
             
         recipes = result
 
@@ -75,7 +86,8 @@ class RecipeScraper(OpenAISchema):
         2. Sort: Prioritize recipes by relevance to search query.
         3. Deduplicate: Remove exact duplicates.
         4. Variance: Retain close, non-exact matches selectively.
-        5. Sanitize: Correct errors, standardize format.
+        5. Sanitize: Correct errors, standardize format
+        6. Ensure top result contains valid image url
 
         Context: Top search results from various sites; refine to match original recipe search.
 
@@ -91,12 +103,12 @@ class RecipeScraper(OpenAISchema):
         """.strip()
         
         completion = agency.client.chat.completions.create(
-            model=current_model,
+            model=gpt4,
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": instruction},
                 {"role": "user", "content": f"Recipe Name: {self.recipe}"},
-                # todo: make assistant injest file instead. create new thread, dispose after tool usage
+                # maybe ingest file via new assistant thread (side mission) instead?
                 {"role": "user", "content": f"Recipes: {json.dumps(recipes, indent=2)}"}
             ]
         )
@@ -106,7 +118,7 @@ class RecipeScraper(OpenAISchema):
         recipes = json.loads(completion.choices[0].message.content)
         
         # Write to file
-        with open(f"Recipes/{self.recipe}_sanitized.json", "w") as f:
+        with open(f"{script_output_path}/{self.recipe}.json", "w") as f:
             json.dump(recipes, f, indent=2)
 
         if not recipes:
@@ -116,6 +128,5 @@ class RecipeScraper(OpenAISchema):
         
         Log(type.RESULT, f"Scrapped {len(recipes)} recipes")
 
-        # Return to agent the json as string
-        return json.dumps(recipes)
+        return f"{len(recipes)} recipes dumped to file '{script_output_directory}/{self.recipe}.json'"
         

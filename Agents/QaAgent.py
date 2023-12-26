@@ -1,6 +1,6 @@
 # /Agents/QaAgent.py
 
-from Utilities.Config import USE_CONCISE_INTRUCTIONS
+from Utilities.Config import USE_VERBOSE_INTRUCTIONS
 from .BaseAgent import BaseAgent
 
 NAME = "QualityAssurance"
@@ -42,7 +42,7 @@ class QaAgent(BaseAgent):
     NAME = NAME
     DESCRIPTION = DESCRIPTION
     SERVICES = SERVICES
-    CUSTOM_INSTRUCTIONS = CONCISE_INSTRUCTIONS if USE_CONCISE_INTRUCTIONS else VERBOSE_INSTRUCTIONS
+    CUSTOM_INSTRUCTIONS = VERBOSE_INSTRUCTIONS if USE_VERBOSE_INTRUCTIONS else CONCISE_INSTRUCTIONS
     
     def __init__(self, agency, id=None):
         
@@ -50,8 +50,5 @@ class QaAgent(BaseAgent):
         self.description = QaAgent.DESCRIPTION
         self.services = QaAgent.SERVICES
         self.custom_instructions = QaAgent.CUSTOM_INSTRUCTIONS
-        
-        # Custom tools
-        self.toolkit = []
             
         super().__init__(agency=agency, assistant_id=id)

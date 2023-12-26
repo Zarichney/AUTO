@@ -3,7 +3,12 @@
 import os
 from instructor import OpenAISchema
 from pydantic import Field
+from Utilities.Config import WORKING_DIRECTORY
 from Utilities.Log import Log, type
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from Agency.Agency import Agency
 
 class CreateFile(OpenAISchema):
     """
@@ -15,7 +20,7 @@ class CreateFile(OpenAISchema):
         description="The name of the file including the extension"
     )
     directory: str = Field(
-        default="./ai-working-dir/",
+        default=WORKING_DIRECTORY,
         description="The path to the directory to be write files to."
     )
     file_content: str = Field(
@@ -27,7 +32,7 @@ class CreateFile(OpenAISchema):
         description="If true, will overwrite the file if it already exists."
     )
 
-    def run(self):
+    def run(self, agency: 'Agency'):
         
         # If file already exists, return message
         if os.path.exists(self.directory + self.file_name):

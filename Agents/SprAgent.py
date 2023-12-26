@@ -17,6 +17,8 @@ LLMs are a kind of deep neural network. They have been demonstrated to embed kno
 
 # METHODOLOGY
 Render the input as a distilled list of succinct statements, assertions, associations, concepts, analogies, and metaphors. Use complete sentences. The idea is to capture as much conceptually, as possible but with as few words as possible. Write it in a way that make sense to you, as the future audience will be another language model, not a human.
+Do not acknowledge yourself in the conversation.
+Unless explictly instructed of SPR edits, you are to simply transform the user's input into the SPR.
 """.strip()
 
 class SprAgent(BaseAgent):
@@ -31,8 +33,5 @@ class SprAgent(BaseAgent):
         self.description = SprAgent.DESCRIPTION
         self.services = SprAgent.SERVICES
         self.custom_instructions = SprAgent.CUSTOM_INSTRUCTIONS
-        
-        # Custom tools
-        self.toolkit = []
             
         super().__init__(agency=agency, assistant_id=id)

@@ -1,7 +1,7 @@
 # /main.py
 
 import sys
-from Agents import BaseAgent, UserAgent
+from Agents import UserAgent
 from Agents.BaseAgent import BaseAgent
 from Agency.Agency import Agency
 from Utilities.Log import Log, Debug, type

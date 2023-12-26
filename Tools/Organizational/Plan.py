@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from Agents.BaseAgent import BaseAgent
     from Agency.Agency import Agency
+    from Agency.Arsenal import SHARED_TOOLS
 
 class Plan(OpenAISchema):
     """
@@ -49,7 +50,7 @@ class Plan(OpenAISchema):
         
         # Add available tools to prompt:
         if master_plan_creation:
-            toolkit = current_agent.shared_tools + current_agent.INTERNAL_TOOLS
+            toolkit = SHARED_TOOLS
         else:
             toolkit = current_agent.tools # todo i think the issue here is that its being fed the internal function
         

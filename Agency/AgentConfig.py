@@ -6,6 +6,10 @@ import openai
 from Agents import agent_classes
 from Utilities.Config import agent_config_file_name
 from Utilities.Log import Debug
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from Agents.BaseAgent import BaseAgent
 
 class AgentConfig:
     def __init__(self, agent_id, agent_name):
@@ -31,7 +35,7 @@ class AgentConfigurationManager:
     def __init__(self, agency, rebuild_agents=False):
         self.agency = agency
         self.configurations: [AgentConfig] = []
-        self.agents: ["BaseAgent"] = []
+        self.agents: [BaseAgent] = []
 
         # if config_file does not exist or has empty contents, initialize file
         if (
@@ -42,7 +46,7 @@ class AgentConfigurationManager:
 
         self._load_from_session_file()
 
-        if len(self.agents) > 0 and rebuild_agents:
+        if len(self.configurations) > 0 and rebuild_agents:
             self._reset_config_file()
 
         if len(self.configurations) == 0:
@@ -51,9 +55,8 @@ class AgentConfigurationManager:
         self._load_agents()
         
     def _reset_config_file(self):
-        for agent in self.agents:
-            agent.delete(self.agency.client)
-        self.agents = []
+        for agentConfig in self.configurations:
+            agentConfig.delete(self.agency.client)
         self.configurations = []
         self._write_to_config_file()
 
