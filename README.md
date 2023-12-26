@@ -1,49 +1,87 @@
-# Autonomous Utilization and Task Organization (AUTO)
+# AUTO Agency (Autonomous Utilization and Task Organization)
 
-## Introduction
+## Project Description
 
-Welcome to the AUTO project, a sophisticated ensemble of specialized AI agents designed to function in unison, providing a seamless integration of various expertise. This project's purpose is to demonstrate the capabilities of an advanced AI system that can autonomously organize and collaborate to achieve complex tasks through its comprehensive toolset. Each agent within the system possesses unique talents, ranging from data analysis to natural language processing, and from software development to creative design. This README serves as a guide to the project's functionalities, usage, and to introduce you to our multi-agent structure.
+Welcome to AUTO Agency, an advanced Python-based command-line application that epitomizes the next step in human-computer interaction. AUTO Agency utilizes the OpenAI Assistant API in a multi-agent system where each agent independently plans, coordinates, and self-organizes, bringing a new level of autonomy and efficiency in task execution. 
 
-### Project's Purpose
-The primary aim of AUTO is to offer an agile and flexible solution for tackling a variety of challenges across multiple domains. By harnessing the collective intelligence and specialized abilities of each agent, the system can adapt to new tasks rapidly and execute them with expert precision.
+This unique system allows users to interact with their local computing environment and beyond through intuitive, plain English commands. From generating local files based on web content to crafting complex documents like a cookbook, AUTO Agency can perform a wide range of tasks that extend far beyond the capabilities of traditional AI systems like ChatGPT. As the project evolves, integration with REST APIs will open even more possibilities for seamless, natural language interactions.
 
-### Capabilities
-Our system boasts a wide array of capabilities, including but not limited to:
-- Autonomous use of specialized tools
-- Real-time collaboration and decision-making
-- Generation of custom technical utilities
-- High-level problem solving in various fields
+## Prerequisites
 
-### Usage
-Users can interact with the AUTO by providing tasks in natural language. The system analyzes the requirements, divides the work among agents based on their specializations, and collectively delivers the desired outcome.
+Before setting up AUTO Agency, ensure you have the following installed:
 
-### Self-Organized Multi-Agent System
-Each agent in the AUTO has been engineered to operate both independently and as a unit. With a self-organized approach to problem-solving, the agents synchronize their actions to make full use of the system's capabilities, all without the need for centralized control. This level of autonomy ensures efficiency and effectiveness in a breadth of scenarios.
+- **IDE**: Visual Studio Code (VS Code)
+- **Python**: A recent version of Python (preferably Python 3.8 or above)
+- **Git**: For version control and cloning the repository
 
-Enjoy exploring the capacities of our AI-driven initiative, where innovation and collaboration are at the core.
+## Setup
 
-# Prereqs
+To set up AUTO Agency on your local machine, follow these steps:
 
-TODO add this
-- IDE: VS Code
-- Python
-- Git
+1. Clone the repository using Git.
+2. Open the project in VS Code.
+3. Create a virtual environment:
 
-# Set up
+   ```bash
+   python -m venv env
+   ```
 
-1. `python -m venv env`
-2. `.\env\Script\activate`
-3. `pip install -r .\requirements.txt`
+4. Activate the virtual environment:
 
-# Get Started 
+   - On Windows:
 
-- `python main.py` and AUTO will wait for your prompt, or
-- `python main.py "my prompt"` to get AUTO to respond to your command or query
+     ```bash
+     .\env\Scripts\activate
+     ```
 
-# Samples
+   - On Unix or MacOS:
 
-- Fetch the content of https://en.wikipedia.org/wiki/OpenAI and transpose this wikipedia page to a local markdown file
+     ```bash
+     source env/bin/activate
+     ```
 
-- I'd like some analysis help on creating a web scraper as a python utility. I intent on developing web scraping tool specifically for food recipes. I've heard of the python package 'beautifulsoup' is useful, but I've also found 'https://raw.githubusercontent.com/hhursev/recipe-scrapers/main/README.rst' and would like to know how to properly build a flawless web scraper for food recipes.
+5. Install the required dependencies:
 
-- Create a Python script that can flawlessly scrape the internet for food recipes based on a user-provided input of a food item name (e.g., 'French Onion Burger'). The script retrieves a minimum of 5 matching recipes from various sites, extracting image URLs, ingredients, servings, prep time, cooking time, directions, and optionally, any notes. All extracted data for each recipe is saved into a JSON file, organized as an array of recipe objects, encapsulating the respective information fields
+   ```bash
+   pip install -r .\requirements.txt
+   ```
+
+## Get Started
+
+To start using AUTO Agency, you can:
+
+- Run the main script and wait for AUTO to prompt you for a command:
+
+  ```bash
+  python main.py
+  ```
+
+- Directly provide a command or query as an argument:
+
+  ```bash
+  python main.py "your prompt here"
+  ```
+
+## Sample Usage
+
+Here are some examples of how you can use AUTO Agency:
+
+1. **Stock Comparison**:
+   
+   ```bash
+   python main.py "compare Google and Apple stocks over the past week"
+   ```
+
+2. **Create a Local File**:
+   
+   ```bash
+   python main.py "create a file with content from the OpenAI Wikipedia page"
+   ```
+
+3. **Draft a Document**:
+   
+   ```bash
+   python main.py "draft a recipe for a chocolate cake"
+   ```
+
+Remember, AUTO Agency is designed to understand and execute a wide range of tasks, so feel free to experiment with different prompts!
