@@ -55,5 +55,7 @@ class CulinaryAgent(BaseAgent):
         self.services = CulinaryAgent.SERVICES
         self.custom_instructions = CulinaryAgent.CUSTOM_INSTRUCTIONS
         self.custom_tools = [RecipeScraper]
+        # todo: introduce BuildUserProfile shared tool. Inputs: purpose, questions list
+        # todo: introduce CreateRecipe custom tool. Inputs: recipe, user_profile, template
             
         super().__init__(agency=agency, assistant_id=id)
