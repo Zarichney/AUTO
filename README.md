@@ -47,6 +47,11 @@ To set up AUTO Agency on your local machine, follow these steps:
    pip install -r .\requirements.txt
    ```
 
+6. Set up your OpenAI key:
+   1. Go to https://platform.openai.com
+   2. Generate a key
+   3. Copy and paste it into a file called "openai.key" (in the root of the project folder)    
+
 ## Get Started
 
 To start using AUTO Agency, you can:
